@@ -22,7 +22,6 @@ package server
 import (
 	"context"
 	"fmt"
-	"io"
 	"net"
 
 	"github.com/miekg/dns"
@@ -47,11 +46,10 @@ func (s *Server) ServeUDP(c net.PacketConn) error {
 		return errMissingDNSHandler
 	}
 
-	closer := io.Closer(c)
-	if ok := s.trackCloser(&closer, true); !ok {
+	if ok := s.trackCloser(c, true); !ok {
 		return ErrServerClosed
 	}
-	defer s.trackCloser(&closer, false)
+	defer s.trackCloser(c, false)
 
 	listenerCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()

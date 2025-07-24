@@ -85,7 +85,7 @@ type Server struct {
 
 	m             sync.Mutex
 	closed        bool
-	closerTracker map[*io.Closer]struct{}
+	closerTracker map[io.Closer]struct{}
 }
 
 func NewServer(opts ServerOpts) *Server {
@@ -104,12 +104,12 @@ func (s *Server) Closed() bool {
 
 // trackCloser adds or removes c to the Server and return true if Server is not closed.
 // We use a pointer in case the underlying value is incomparable.
-func (s *Server) trackCloser(c *io.Closer, add bool) bool {
+func (s *Server) trackCloser(c io.Closer, add bool) bool {
 	s.m.Lock()
 	defer s.m.Unlock()
 
 	if s.closerTracker == nil {
-		s.closerTracker = make(map[*io.Closer]struct{})
+		s.closerTracker = make(map[io.Closer]struct{})
 	}
 
 	if add {
@@ -134,7 +134,7 @@ func (s *Server) Close() {
 
 	s.closed = true
 	for closer := range s.closerTracker {
-		(*closer).Close()
+		closer.Close()
 	}
 	return
 }
