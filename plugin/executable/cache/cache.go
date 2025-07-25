@@ -22,6 +22,15 @@ package cache
 import (
 	"context"
 	"fmt"
+	"time"
+
+	"github.com/go-redis/redis/v8"
+	"github.com/golang/snappy"
+	"github.com/miekg/dns"
+	"github.com/prometheus/client_golang/prometheus"
+	"go.uber.org/zap"
+	"golang.org/x/sync/singleflight"
+
 	"github.com/IrineSistiana/mosdns/v4/coremain"
 	"github.com/IrineSistiana/mosdns/v4/pkg/cache"
 	"github.com/IrineSistiana/mosdns/v4/pkg/cache/mem_cache"
@@ -30,13 +39,6 @@ import (
 	"github.com/IrineSistiana/mosdns/v4/pkg/executable_seq"
 	"github.com/IrineSistiana/mosdns/v4/pkg/pool"
 	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
-	"github.com/go-redis/redis/v8"
-	"github.com/golang/snappy"
-	"github.com/miekg/dns"
-	"github.com/prometheus/client_golang/prometheus"
-	"go.uber.org/zap"
-	"golang.org/x/sync/singleflight"
-	"time"
 )
 
 const (

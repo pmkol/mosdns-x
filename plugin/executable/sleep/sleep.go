@@ -21,11 +21,12 @@ package sleep
 
 import (
 	"context"
+	"time"
+
 	"github.com/IrineSistiana/mosdns/v4/coremain"
 	"github.com/IrineSistiana/mosdns/v4/pkg/executable_seq"
 	"github.com/IrineSistiana/mosdns/v4/pkg/pool"
 	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
-	"time"
 )
 
 const PluginType = "sleep"

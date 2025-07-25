@@ -23,13 +23,15 @@ import (
 	"crypto/rand"
 	"crypto/tls"
 	"fmt"
-	"github.com/IrineSistiana/mosdns/v4/mlog"
-	"github.com/IrineSistiana/mosdns/v4/pkg/utils"
-	"github.com/miekg/dns"
-	"github.com/spf13/cobra"
 	"net"
 	"strconv"
 	"time"
+
+	"github.com/miekg/dns"
+	"github.com/spf13/cobra"
+
+	"github.com/IrineSistiana/mosdns/v4/mlog"
+	"github.com/IrineSistiana/mosdns/v4/pkg/utils"
 )
 
 func newIdleTimeoutCmd() *cobra.Command {

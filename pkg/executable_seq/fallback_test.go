@@ -22,11 +22,13 @@ package executable_seq
 import (
 	"context"
 	"errors"
-	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
-	"github.com/miekg/dns"
-	"go.uber.org/zap"
 	"testing"
 	"time"
+
+	"github.com/miekg/dns"
+	"go.uber.org/zap"
+
+	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
 )
 
 func Test_FallbackECS_fallback(t *testing.T) {

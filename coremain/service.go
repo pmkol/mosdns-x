@@ -21,13 +21,15 @@ package coremain
 
 import (
 	"fmt"
-	"github.com/IrineSistiana/mosdns/v4/mlog"
-	"github.com/kardianos/service"
-	"github.com/spf13/cobra"
-	"go.uber.org/zap"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/kardianos/service"
+	"github.com/spf13/cobra"
+	"go.uber.org/zap"
+
+	"github.com/IrineSistiana/mosdns/v4/mlog"
 )
 
 var (

@@ -20,8 +20,9 @@
 package tools
 
 import (
-	"github.com/IrineSistiana/mosdns/v4/coremain"
 	"github.com/spf13/cobra"
+
+	"github.com/IrineSistiana/mosdns/v4/coremain"
 )
 
 func init() {

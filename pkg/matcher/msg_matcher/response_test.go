@@ -20,10 +20,12 @@
 package msg_matcher
 
 import (
-	"github.com/IrineSistiana/mosdns/v4/pkg/matcher/netlist"
-	"github.com/miekg/dns"
 	"net"
 	"testing"
+
+	"github.com/miekg/dns"
+
+	"github.com/IrineSistiana/mosdns/v4/pkg/matcher/netlist"
 )
 
 func TestAAAAAIPMatcher_MatchMsg(t *testing.T) {

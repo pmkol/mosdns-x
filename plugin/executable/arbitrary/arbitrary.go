@@ -22,11 +22,12 @@ package arbitrary
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/IrineSistiana/mosdns/v4/coremain"
 	"github.com/IrineSistiana/mosdns/v4/pkg/executable_seq"
 	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
 	"github.com/IrineSistiana/mosdns/v4/pkg/zone_file"
-	"strings"
 )
 
 const PluginType = "arbitrary"

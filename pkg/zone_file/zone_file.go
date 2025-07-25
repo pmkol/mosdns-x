@@ -20,9 +20,10 @@
 package zone_file
 
 import (
-	"github.com/miekg/dns"
 	"io"
 	"os"
+
+	"github.com/miekg/dns"
 )
 
 type Matcher struct {

@@ -23,11 +23,12 @@ package nftset_utils
 
 import (
 	"fmt"
-	"github.com/google/nftables"
-	"go4.org/netipx"
 	"net/netip"
 	"sync"
 	"time"
+
+	"github.com/google/nftables"
+	"go4.org/netipx"
 )
 
 // NftSetHandler can add netip.Prefix to the corresponding set.

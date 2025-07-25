@@ -22,10 +22,12 @@ package executable_seq
 import (
 	"context"
 	"fmt"
-	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
-	"go.uber.org/zap"
 	"strconv"
 	"sync/atomic"
+
+	"go.uber.org/zap"
+
+	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
 )
 
 type LBNode struct {

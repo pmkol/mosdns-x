@@ -20,9 +20,10 @@
 package zone_file
 
 import (
-	"github.com/miekg/dns"
 	"strings"
 	"testing"
+
+	"github.com/miekg/dns"
 )
 
 const data = `

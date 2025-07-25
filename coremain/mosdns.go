@@ -22,19 +22,21 @@ package coremain
 import (
 	"errors"
 	"fmt"
-	"github.com/IrineSistiana/mosdns/v4/mlog"
-	"github.com/IrineSistiana/mosdns/v4/pkg/data_provider"
-	"github.com/IrineSistiana/mosdns/v4/pkg/executable_seq"
-	"github.com/IrineSistiana/mosdns/v4/pkg/safe_close"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/collectors"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"go.uber.org/zap"
 	"net/http"
 	"net/http/pprof"
 	"runtime"
 	"runtime/debug"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/collectors"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.uber.org/zap"
+
+	"github.com/IrineSistiana/mosdns/v4/mlog"
+	"github.com/IrineSistiana/mosdns/v4/pkg/data_provider"
+	"github.com/IrineSistiana/mosdns/v4/pkg/executable_seq"
+	"github.com/IrineSistiana/mosdns/v4/pkg/safe_close"
 )
 
 type Mosdns struct {

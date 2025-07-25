@@ -21,14 +21,16 @@ package ecs
 
 import (
 	"context"
+	"net"
+	"net/netip"
+	"testing"
+
+	"github.com/miekg/dns"
+
 	"github.com/IrineSistiana/mosdns/v4/coremain"
 	"github.com/IrineSistiana/mosdns/v4/pkg/dnsutils"
 	"github.com/IrineSistiana/mosdns/v4/pkg/executable_seq"
 	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
-	"github.com/miekg/dns"
-	"net"
-	"net/netip"
-	"testing"
 )
 
 func Test_ecsPlugin(t *testing.T) {

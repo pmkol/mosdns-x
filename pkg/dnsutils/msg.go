@@ -21,11 +21,13 @@ package dnsutils
 
 import (
 	"encoding/binary"
-	"github.com/IrineSistiana/mosdns/v4/pkg/pool"
-	"github.com/IrineSistiana/mosdns/v4/pkg/utils"
-	"github.com/miekg/dns"
 	"strconv"
 	"strings"
+
+	"github.com/miekg/dns"
+
+	"github.com/IrineSistiana/mosdns/v4/pkg/pool"
+	"github.com/IrineSistiana/mosdns/v4/pkg/utils"
 )
 
 // GetMinimalTTL returns the minimal ttl of this msg.

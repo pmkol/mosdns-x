@@ -23,6 +23,9 @@ import (
 	"context"
 	"io"
 
+	"github.com/miekg/dns"
+	"go.uber.org/zap"
+
 	"github.com/IrineSistiana/mosdns/v4/coremain"
 	"github.com/IrineSistiana/mosdns/v4/pkg/executable_seq"
 	"github.com/IrineSistiana/mosdns/v4/pkg/matcher/domain"
@@ -30,8 +33,6 @@ import (
 	"github.com/IrineSistiana/mosdns/v4/pkg/matcher/msg_matcher"
 	"github.com/IrineSistiana/mosdns/v4/pkg/matcher/netlist"
 	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
-	"github.com/miekg/dns"
-	"go.uber.org/zap"
 )
 
 const PluginType = "query_matcher"

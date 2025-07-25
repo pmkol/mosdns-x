@@ -20,9 +20,10 @@
 package concurrent_lru
 
 import (
-	"github.com/IrineSistiana/mosdns/v4/pkg/lru"
 	"hash/maphash"
 	"sync"
+
+	"github.com/IrineSistiana/mosdns/v4/pkg/lru"
 )
 
 type ShardedLRU[V any] struct {

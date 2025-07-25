@@ -22,13 +22,15 @@ package coremain
 import (
 	"errors"
 	"fmt"
+	"net"
+	"time"
+
+	"github.com/pires/go-proxyproto"
+	"go.uber.org/zap"
+
 	"github.com/IrineSistiana/mosdns/v4/pkg/server"
 	"github.com/IrineSistiana/mosdns/v4/pkg/server/dns_handler"
 	"github.com/IrineSistiana/mosdns/v4/pkg/server/http_handler"
-	"github.com/pires/go-proxyproto"
-	"go.uber.org/zap"
-	"net"
-	"time"
 )
 
 const defaultQueryTimeout = time.Second * 5

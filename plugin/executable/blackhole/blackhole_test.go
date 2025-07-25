@@ -21,11 +21,13 @@ package blackhole
 
 import (
 	"context"
-	"github.com/IrineSistiana/mosdns/v4/coremain"
-	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
-	"github.com/miekg/dns"
 	"net"
 	"testing"
+
+	"github.com/miekg/dns"
+
+	"github.com/IrineSistiana/mosdns/v4/coremain"
+	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
 )
 
 func Test_blackhole_Exec(t *testing.T) {

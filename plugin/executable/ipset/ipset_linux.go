@@ -24,13 +24,15 @@ package ipset
 import (
 	"context"
 	"fmt"
-	"github.com/IrineSistiana/mosdns/v4/coremain"
-	"github.com/IrineSistiana/mosdns/v4/pkg/executable_seq"
-	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
+	"net/netip"
+
 	"github.com/miekg/dns"
 	"github.com/nadoo/ipset"
 	"go.uber.org/zap"
-	"net/netip"
+
+	"github.com/IrineSistiana/mosdns/v4/coremain"
+	"github.com/IrineSistiana/mosdns/v4/pkg/executable_seq"
+	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
 )
 
 var _ coremain.ExecutablePlugin = (*ipsetPlugin)(nil)

@@ -23,13 +23,15 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"github.com/IrineSistiana/mosdns/v4/pkg/pool"
-	"github.com/IrineSistiana/mosdns/v4/pkg/utils"
-	"github.com/miekg/dns"
 	"io"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/miekg/dns"
+
+	"github.com/IrineSistiana/mosdns/v4/pkg/pool"
+	"github.com/IrineSistiana/mosdns/v4/pkg/utils"
 )
 
 const (

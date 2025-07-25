@@ -23,16 +23,18 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/IrineSistiana/mosdns/v4/pkg/dnsutils"
-	"github.com/IrineSistiana/mosdns/v4/pkg/pool"
-	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
-	"github.com/IrineSistiana/mosdns/v4/pkg/server/dns_handler"
-	"github.com/miekg/dns"
-	"go.uber.org/zap"
 	"io"
 	"net/http"
 	"net/netip"
 	"strings"
+
+	"github.com/miekg/dns"
+	"go.uber.org/zap"
+
+	"github.com/IrineSistiana/mosdns/v4/pkg/dnsutils"
+	"github.com/IrineSistiana/mosdns/v4/pkg/pool"
+	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
+	"github.com/IrineSistiana/mosdns/v4/pkg/server/dns_handler"
 )
 
 var (

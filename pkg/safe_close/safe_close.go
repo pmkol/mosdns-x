@@ -24,11 +24,11 @@ import "sync"
 // SafeClose can achieve safe close where CloseWait returns only after
 // all sub goroutines exited.
 //
-// 1. Main service goroutine starts and wait on ReceiveCloseSignal and call Done before returns.
-// 2. Any service's sub goroutine should be started by Attach and wait on ReceiveCloseSignal.
-// 3. If any fatal err occurs, any service goroutine can call SendCloseSignal to close the service.
-//    Note that CloseWait cannot be called in the service, otherwise it will be deadlocked.
-// 4. Any third party caller can call CloseWait to close the service.
+//  1. Main service goroutine starts and wait on ReceiveCloseSignal and call Done before returns.
+//  2. Any service's sub goroutine should be started by Attach and wait on ReceiveCloseSignal.
+//  3. If any fatal err occurs, any service goroutine can call SendCloseSignal to close the service.
+//     Note that CloseWait cannot be called in the service, otherwise it will be deadlocked.
+//  4. Any third party caller can call CloseWait to close the service.
 type SafeClose struct {
 	m           sync.Mutex
 	wg          sync.WaitGroup

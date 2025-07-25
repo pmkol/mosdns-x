@@ -22,13 +22,15 @@ package transport
 import (
 	"context"
 	"errors"
-	"github.com/IrineSistiana/mosdns/v4/pkg/utils"
-	"github.com/miekg/dns"
-	"go.uber.org/zap"
 	"io"
 	"net"
 	"sync"
 	"time"
+
+	"github.com/miekg/dns"
+	"go.uber.org/zap"
+
+	"github.com/IrineSistiana/mosdns/v4/pkg/utils"
 )
 
 var (

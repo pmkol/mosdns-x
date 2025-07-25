@@ -22,12 +22,14 @@ package server
 import (
 	"crypto/tls"
 	"errors"
-	"github.com/IrineSistiana/mosdns/v4/pkg/server/dns_handler"
-	"go.uber.org/zap"
 	"io"
 	"net/http"
 	"sync"
 	"time"
+
+	"go.uber.org/zap"
+
+	"github.com/IrineSistiana/mosdns/v4/pkg/server/dns_handler"
 )
 
 var (

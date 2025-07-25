@@ -21,6 +21,7 @@ package lru
 
 import (
 	"fmt"
+
 	"github.com/IrineSistiana/mosdns/v4/pkg/list"
 )
 

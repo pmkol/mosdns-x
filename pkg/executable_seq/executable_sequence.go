@@ -22,10 +22,12 @@ package executable_seq
 import (
 	"errors"
 	"fmt"
-	"github.com/IrineSistiana/mosdns/v4/pkg/utils"
-	"go.uber.org/zap"
 	"reflect"
 	"strconv"
+
+	"go.uber.org/zap"
+
+	"github.com/IrineSistiana/mosdns/v4/pkg/utils"
 )
 
 // BuildExecutableLogicTree parses in into a ExecutableChainNode.

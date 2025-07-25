@@ -22,14 +22,16 @@ package server
 import (
 	"context"
 	"fmt"
+	"io"
+	"net"
+	"time"
+
+	"go.uber.org/zap"
+
 	"github.com/IrineSistiana/mosdns/v4/pkg/dnsutils"
 	"github.com/IrineSistiana/mosdns/v4/pkg/pool"
 	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
 	"github.com/IrineSistiana/mosdns/v4/pkg/utils"
-	"go.uber.org/zap"
-	"io"
-	"net"
-	"time"
 )
 
 const (

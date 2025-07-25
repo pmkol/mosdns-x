@@ -22,12 +22,13 @@ package hosts
 import (
 	"bytes"
 	"context"
+	"io"
+
 	"github.com/IrineSistiana/mosdns/v4/coremain"
 	"github.com/IrineSistiana/mosdns/v4/pkg/executable_seq"
 	"github.com/IrineSistiana/mosdns/v4/pkg/hosts"
 	"github.com/IrineSistiana/mosdns/v4/pkg/matcher/domain"
 	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
-	"io"
 )
 
 const PluginType = "hosts"

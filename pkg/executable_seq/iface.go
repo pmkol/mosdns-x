@@ -21,6 +21,7 @@ package executable_seq
 
 import (
 	"context"
+
 	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
 )
 

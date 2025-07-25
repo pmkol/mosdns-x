@@ -21,11 +21,13 @@ package metrics_collector
 
 import (
 	"context"
+	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/IrineSistiana/mosdns/v4/coremain"
 	"github.com/IrineSistiana/mosdns/v4/pkg/executable_seq"
 	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
-	"github.com/prometheus/client_golang/prometheus"
-	"time"
 )
 
 const PluginType = "metrics_collector"

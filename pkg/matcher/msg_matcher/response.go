@@ -21,13 +21,15 @@ package msg_matcher
 
 import (
 	"context"
+	"net"
+	"net/netip"
+
+	"github.com/miekg/dns"
+
 	"github.com/IrineSistiana/mosdns/v4/pkg/matcher/domain"
 	"github.com/IrineSistiana/mosdns/v4/pkg/matcher/elem"
 	"github.com/IrineSistiana/mosdns/v4/pkg/matcher/netlist"
 	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
-	"github.com/miekg/dns"
-	"net"
-	"net/netip"
 )
 
 type AAAAAIPMatcher struct {

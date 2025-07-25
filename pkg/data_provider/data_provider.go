@@ -21,12 +21,14 @@ package data_provider
 
 import (
 	"fmt"
-	"github.com/IrineSistiana/mosdns/v4/pkg/safe_close"
-	"github.com/fsnotify/fsnotify"
-	"go.uber.org/zap"
 	"os"
 	"sync"
 	"time"
+
+	"github.com/fsnotify/fsnotify"
+	"go.uber.org/zap"
+
+	"github.com/IrineSistiana/mosdns/v4/pkg/safe_close"
 )
 
 type DataManager struct {

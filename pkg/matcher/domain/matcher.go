@@ -21,9 +21,10 @@ package domain
 
 import (
 	"fmt"
-	"github.com/IrineSistiana/mosdns/v4/pkg/utils"
 	"regexp"
 	"strings"
+
+	"github.com/IrineSistiana/mosdns/v4/pkg/utils"
 )
 
 var _ WriteableMatcher[any] = (*MixMatcher[any])(nil)

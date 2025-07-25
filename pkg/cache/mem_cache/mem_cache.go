@@ -20,9 +20,10 @@
 package mem_cache
 
 import (
-	"github.com/IrineSistiana/mosdns/v4/pkg/concurrent_lru"
 	"sync/atomic"
 	"time"
+
+	"github.com/IrineSistiana/mosdns/v4/pkg/concurrent_lru"
 )
 
 const (

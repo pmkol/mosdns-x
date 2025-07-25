@@ -23,14 +23,16 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"github.com/IrineSistiana/mosdns/v4/pkg/data_provider"
-	"github.com/IrineSistiana/mosdns/v4/pkg/matcher/v2data"
-	"github.com/IrineSistiana/mosdns/v4/pkg/utils"
-	"google.golang.org/protobuf/proto"
 	"io"
 	"net/netip"
 	"strings"
 	"sync/atomic"
+
+	"google.golang.org/protobuf/proto"
+
+	"github.com/IrineSistiana/mosdns/v4/pkg/data_provider"
+	"github.com/IrineSistiana/mosdns/v4/pkg/matcher/v2data"
+	"github.com/IrineSistiana/mosdns/v4/pkg/utils"
 )
 
 type MatcherGroup struct {

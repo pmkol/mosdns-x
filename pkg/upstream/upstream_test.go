@@ -24,12 +24,14 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"github.com/IrineSistiana/mosdns/v4/pkg/utils"
-	"github.com/miekg/dns"
 	"net"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/miekg/dns"
+
+	"github.com/IrineSistiana/mosdns/v4/pkg/utils"
 )
 
 func newUDPTestServer(t testing.TB, handler dns.Handler) (addr string, shutdownFunc func()) {

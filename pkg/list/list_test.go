@@ -20,9 +20,10 @@
 package list
 
 import (
-	"github.com/stretchr/testify/assert"
 	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func checkLinkPointers[V any](t *testing.T, l *List[V]) {

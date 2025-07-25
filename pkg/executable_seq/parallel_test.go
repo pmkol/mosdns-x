@@ -22,10 +22,12 @@ package executable_seq
 import (
 	"context"
 	"errors"
-	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
+	"testing"
+
 	"github.com/miekg/dns"
 	"go.uber.org/zap"
-	"testing"
+
+	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
 )
 
 func Test_ParallelNode(t *testing.T) {

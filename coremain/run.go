@@ -21,15 +21,17 @@ package coremain
 
 import (
 	"fmt"
-	"github.com/IrineSistiana/mosdns/v4/mlog"
+	"os"
+	"runtime"
+	"strings"
+
 	"github.com/kardianos/service"
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
-	"os"
-	"runtime"
-	"strings"
+
+	"github.com/IrineSistiana/mosdns/v4/mlog"
 )
 
 type serverFlags struct {

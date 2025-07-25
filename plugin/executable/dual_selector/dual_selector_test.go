@@ -21,13 +21,15 @@ package dual_selector
 
 import (
 	"context"
-	"github.com/IrineSistiana/mosdns/v4/coremain"
-	"github.com/IrineSistiana/mosdns/v4/pkg/executable_seq"
-	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
-	"github.com/miekg/dns"
 	"net"
 	"testing"
 	"time"
+
+	"github.com/miekg/dns"
+
+	"github.com/IrineSistiana/mosdns/v4/coremain"
+	"github.com/IrineSistiana/mosdns/v4/pkg/executable_seq"
+	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
 )
 
 type dummyNext struct {

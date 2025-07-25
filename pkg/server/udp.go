@@ -22,13 +22,15 @@ package server
 import (
 	"context"
 	"fmt"
+	"io"
+	"net"
+
+	"github.com/miekg/dns"
+	"go.uber.org/zap"
+
 	"github.com/IrineSistiana/mosdns/v4/pkg/pool"
 	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
 	"github.com/IrineSistiana/mosdns/v4/pkg/utils"
-	"github.com/miekg/dns"
-	"go.uber.org/zap"
-	"io"
-	"net"
 )
 
 // cmcUDPConn can read and write cmsg.

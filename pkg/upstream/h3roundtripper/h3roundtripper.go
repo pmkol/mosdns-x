@@ -22,12 +22,13 @@ package h3roundtripper
 import (
 	"context"
 	"crypto/tls"
-	"github.com/lucas-clemente/quic-go"
-	"github.com/lucas-clemente/quic-go/http3"
-	"go.uber.org/zap"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/lucas-clemente/quic-go"
+	"github.com/lucas-clemente/quic-go/http3"
+	"go.uber.org/zap"
 )
 
 const (

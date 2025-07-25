@@ -21,15 +21,17 @@ package msg_matcher
 
 import (
 	"context"
+	"net"
+	"net/netip"
+	"testing"
+
+	"github.com/miekg/dns"
+
 	"github.com/IrineSistiana/mosdns/v4/pkg/dnsutils"
 	"github.com/IrineSistiana/mosdns/v4/pkg/matcher/domain"
 	"github.com/IrineSistiana/mosdns/v4/pkg/matcher/elem"
 	"github.com/IrineSistiana/mosdns/v4/pkg/matcher/netlist"
 	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
-	"github.com/miekg/dns"
-	"net"
-	"net/netip"
-	"testing"
 )
 
 func TestClientIPMatcher_Match(t *testing.T) {

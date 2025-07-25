@@ -21,11 +21,13 @@ package query_summary
 
 import (
 	"context"
+	"time"
+
+	"go.uber.org/zap"
+
 	"github.com/IrineSistiana/mosdns/v4/coremain"
 	"github.com/IrineSistiana/mosdns/v4/pkg/executable_seq"
 	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
-	"go.uber.org/zap"
-	"time"
 )
 
 const (

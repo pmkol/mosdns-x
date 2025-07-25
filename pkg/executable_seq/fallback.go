@@ -23,11 +23,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/IrineSistiana/mosdns/v4/pkg/pool"
-	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
-	"go.uber.org/zap"
 	"sync"
 	"time"
+
+	"go.uber.org/zap"
+
+	"github.com/IrineSistiana/mosdns/v4/pkg/pool"
+	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
 )
 
 type FallbackConfig struct {

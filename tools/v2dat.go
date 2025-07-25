@@ -21,16 +21,18 @@ package tools
 
 import (
 	"fmt"
-	"github.com/IrineSistiana/mosdns/v4/mlog"
-	"github.com/IrineSistiana/mosdns/v4/pkg/matcher/domain"
-	"github.com/IrineSistiana/mosdns/v4/pkg/matcher/netlist"
-	"github.com/IrineSistiana/mosdns/v4/pkg/matcher/v2data"
-	"github.com/spf13/cobra"
 	"io"
 	"net"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/spf13/cobra"
+
+	"github.com/IrineSistiana/mosdns/v4/mlog"
+	"github.com/IrineSistiana/mosdns/v4/pkg/matcher/domain"
+	"github.com/IrineSistiana/mosdns/v4/pkg/matcher/netlist"
+	"github.com/IrineSistiana/mosdns/v4/pkg/matcher/v2data"
 )
 
 func newUnpackDomainCmd() *cobra.Command {

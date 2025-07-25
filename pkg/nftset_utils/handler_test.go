@@ -20,10 +20,11 @@
 package nftset_utils
 
 import (
-	"github.com/google/nftables"
 	"net/netip"
 	"os"
 	"testing"
+
+	"github.com/google/nftables"
 )
 
 func skipCI(t *testing.T) {

@@ -22,13 +22,15 @@ package dns_handler
 import (
 	"context"
 	"errors"
+	"testing"
+	"time"
+
+	"github.com/miekg/dns"
+	"go.uber.org/zap"
+
 	"github.com/IrineSistiana/mosdns/v4/pkg/executable_seq"
 	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
 	"github.com/IrineSistiana/mosdns/v4/pkg/utils"
-	"github.com/miekg/dns"
-	"go.uber.org/zap"
-	"testing"
-	"time"
 )
 
 const (

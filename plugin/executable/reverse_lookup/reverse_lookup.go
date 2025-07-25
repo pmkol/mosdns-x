@@ -22,6 +22,14 @@ package reverselookup
 import (
 	"context"
 	"fmt"
+	"net"
+	"net/http"
+	"net/netip"
+	"time"
+
+	"github.com/go-redis/redis/v8"
+	"github.com/miekg/dns"
+
 	"github.com/IrineSistiana/mosdns/v4/coremain"
 	"github.com/IrineSistiana/mosdns/v4/pkg/cache"
 	"github.com/IrineSistiana/mosdns/v4/pkg/cache/mem_cache"
@@ -29,12 +37,6 @@ import (
 	"github.com/IrineSistiana/mosdns/v4/pkg/executable_seq"
 	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
 	"github.com/IrineSistiana/mosdns/v4/pkg/utils"
-	"github.com/go-redis/redis/v8"
-	"github.com/miekg/dns"
-	"net"
-	"net/http"
-	"net/netip"
-	"time"
 )
 
 const (

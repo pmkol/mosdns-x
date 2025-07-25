@@ -20,12 +20,13 @@
 package server
 
 import (
-	"go.uber.org/zap"
-	"golang.org/x/net/http2"
 	"io"
 	"net"
 	"net/http"
 	"time"
+
+	"go.uber.org/zap"
+	"golang.org/x/net/http2"
 )
 
 func (s *Server) ServeHTTP(l net.Listener) error {

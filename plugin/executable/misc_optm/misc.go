@@ -21,12 +21,14 @@ package misc_optm
 
 import (
 	"context"
+	"math/rand"
+
+	"github.com/miekg/dns"
+
 	"github.com/IrineSistiana/mosdns/v4/coremain"
 	"github.com/IrineSistiana/mosdns/v4/pkg/dnsutils"
 	"github.com/IrineSistiana/mosdns/v4/pkg/executable_seq"
 	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
-	"github.com/miekg/dns"
-	"math/rand"
 )
 
 const (

@@ -22,10 +22,12 @@ package executable_seq
 import (
 	"context"
 	"fmt"
-	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
+	"sync"
+
 	"github.com/Knetic/govaluate"
 	"go.uber.org/zap"
-	"sync"
+
+	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
 )
 
 // ConditionNodeConfig is a config to build a ConditionNode.

@@ -20,9 +20,10 @@
 package dnsutils
 
 import (
-	"github.com/miekg/dns"
 	"strings"
 	"testing"
+
+	"github.com/miekg/dns"
 )
 
 func TestPadToMinimum(t *testing.T) {

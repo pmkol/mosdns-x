@@ -21,8 +21,9 @@ package transport
 
 import (
 	"context"
-	"github.com/miekg/dns"
 	"time"
+
+	"github.com/miekg/dns"
 )
 
 // getContextDeadline tries to get the deadline of ctx or return a default

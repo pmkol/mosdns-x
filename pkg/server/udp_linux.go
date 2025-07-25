@@ -23,11 +23,12 @@ package server
 
 import (
 	"fmt"
+	"net"
+	"os"
+
 	"golang.org/x/net/ipv4"
 	"golang.org/x/net/ipv6"
 	"golang.org/x/sys/unix"
-	"net"
-	"os"
 )
 
 type ipv4cmc struct {

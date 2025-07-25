@@ -22,8 +22,9 @@ package upstream
 import (
 	"context"
 	"fmt"
-	"golang.org/x/net/proxy"
 	"net"
+
+	"golang.org/x/net/proxy"
 )
 
 type socketOpts struct {

@@ -22,13 +22,15 @@ package query_context
 import (
 	"errors"
 	"fmt"
-	"github.com/IrineSistiana/mosdns/v4/pkg/dnsutils"
-	"github.com/miekg/dns"
-	"go.uber.org/zap"
 	"net/netip"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/miekg/dns"
+	"go.uber.org/zap"
+
+	"github.com/IrineSistiana/mosdns/v4/pkg/dnsutils"
 )
 
 // RequestMeta represents some metadata about the request.

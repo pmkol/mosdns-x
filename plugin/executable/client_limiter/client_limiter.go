@@ -21,13 +21,15 @@ package client_limiter
 
 import (
 	"context"
+	"sync"
+	"time"
+
+	"github.com/miekg/dns"
+
 	"github.com/IrineSistiana/mosdns/v4/coremain"
 	"github.com/IrineSistiana/mosdns/v4/pkg/concurrent_limiter"
 	"github.com/IrineSistiana/mosdns/v4/pkg/executable_seq"
 	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
-	"github.com/miekg/dns"
-	"sync"
-	"time"
 )
 
 const PluginType = "client_limiter"

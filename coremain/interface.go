@@ -20,8 +20,9 @@
 package coremain
 
 import (
-	"github.com/IrineSistiana/mosdns/v4/pkg/executable_seq"
 	"io"
+
+	"github.com/IrineSistiana/mosdns/v4/pkg/executable_seq"
 )
 
 // Plugin represents the basic plugin.

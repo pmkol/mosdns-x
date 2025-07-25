@@ -21,9 +21,10 @@ package fastforward
 
 import (
 	"context"
-	"github.com/IrineSistiana/mosdns/v4/pkg/dnsutils"
 	"net"
 	"time"
+
+	"github.com/IrineSistiana/mosdns/v4/pkg/dnsutils"
 
 	"github.com/miekg/dns"
 )

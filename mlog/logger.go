@@ -21,9 +21,10 @@ package mlog
 
 import (
 	"fmt"
+	"os"
+
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"os"
 )
 
 type LogConfig struct {

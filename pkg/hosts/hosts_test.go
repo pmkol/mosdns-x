@@ -21,10 +21,12 @@ package hosts
 
 import (
 	"bytes"
-	"github.com/IrineSistiana/mosdns/v4/pkg/matcher/domain"
-	"github.com/miekg/dns"
 	"net"
 	"testing"
+
+	"github.com/miekg/dns"
+
+	"github.com/IrineSistiana/mosdns/v4/pkg/matcher/domain"
 )
 
 var test_hosts = `

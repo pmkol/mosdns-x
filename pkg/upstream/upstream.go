@@ -23,15 +23,6 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"github.com/IrineSistiana/mosdns/v4/pkg/dnsutils"
-	"github.com/IrineSistiana/mosdns/v4/pkg/upstream/bootstrap"
-	"github.com/IrineSistiana/mosdns/v4/pkg/upstream/doh"
-	"github.com/IrineSistiana/mosdns/v4/pkg/upstream/h3roundtripper"
-	"github.com/IrineSistiana/mosdns/v4/pkg/upstream/transport"
-	"github.com/lucas-clemente/quic-go"
-	"github.com/miekg/dns"
-	"go.uber.org/zap"
-	"golang.org/x/net/http2"
 	"io"
 	"net"
 	"net/http"
@@ -39,6 +30,17 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/lucas-clemente/quic-go"
+	"github.com/miekg/dns"
+	"go.uber.org/zap"
+	"golang.org/x/net/http2"
+
+	"github.com/IrineSistiana/mosdns/v4/pkg/dnsutils"
+	"github.com/IrineSistiana/mosdns/v4/pkg/upstream/bootstrap"
+	"github.com/IrineSistiana/mosdns/v4/pkg/upstream/doh"
+	"github.com/IrineSistiana/mosdns/v4/pkg/upstream/h3roundtripper"
+	"github.com/IrineSistiana/mosdns/v4/pkg/upstream/transport"
 )
 
 const (

@@ -24,14 +24,16 @@ package nftset
 import (
 	"context"
 	"fmt"
+	"net/netip"
+
+	"github.com/google/nftables"
+	"github.com/miekg/dns"
+	"go.uber.org/zap"
+
 	"github.com/IrineSistiana/mosdns/v4/coremain"
 	"github.com/IrineSistiana/mosdns/v4/pkg/executable_seq"
 	"github.com/IrineSistiana/mosdns/v4/pkg/nftset_utils"
 	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
-	"github.com/google/nftables"
-	"github.com/miekg/dns"
-	"go.uber.org/zap"
-	"net/netip"
 )
 
 type nftsetPlugin struct {

@@ -23,13 +23,15 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"strings"
+
+	"github.com/miekg/dns"
+	"go.uber.org/zap"
+
 	"github.com/IrineSistiana/mosdns/v4/coremain"
 	"github.com/IrineSistiana/mosdns/v4/pkg/executable_seq"
 	"github.com/IrineSistiana/mosdns/v4/pkg/matcher/domain"
 	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
-	"github.com/miekg/dns"
-	"go.uber.org/zap"
-	"strings"
 )
 
 const PluginType = "redirect"

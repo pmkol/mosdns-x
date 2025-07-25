@@ -20,10 +20,12 @@
 package tools
 
 import (
-	"github.com/IrineSistiana/mosdns/v4/mlog"
+	"strings"
+
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"strings"
+
+	"github.com/IrineSistiana/mosdns/v4/mlog"
 )
 
 func newConvCmd() *cobra.Command {

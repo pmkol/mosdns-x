@@ -23,9 +23,11 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"github.com/IrineSistiana/mosdns/v4/pkg/pool"
-	"github.com/miekg/dns"
 	"io"
+
+	"github.com/miekg/dns"
+
+	"github.com/IrineSistiana/mosdns/v4/pkg/pool"
 )
 
 var (

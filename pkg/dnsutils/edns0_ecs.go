@@ -20,8 +20,9 @@
 package dnsutils
 
 import (
-	"github.com/miekg/dns"
 	"net"
+
+	"github.com/miekg/dns"
 )
 
 func GetMsgECS(m *dns.Msg) (e *dns.EDNS0_SUBNET) {

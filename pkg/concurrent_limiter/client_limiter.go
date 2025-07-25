@@ -21,11 +21,12 @@ package concurrent_limiter
 
 import (
 	"fmt"
-	"github.com/IrineSistiana/mosdns/v4/pkg/concurrent_map"
-	"github.com/IrineSistiana/mosdns/v4/pkg/utils"
 	"net/netip"
 	"sync"
 	"time"
+
+	"github.com/IrineSistiana/mosdns/v4/pkg/concurrent_map"
+	"github.com/IrineSistiana/mosdns/v4/pkg/utils"
 )
 
 type ClientLimiter interface {
