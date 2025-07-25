@@ -27,12 +27,10 @@ import (
 
 	"github.com/miekg/dns"
 
-	"github.com/IrineSistiana/mosdns/v4/pkg/pool"
+	"github.com/pmkol/mosdns-x/pkg/pool"
 )
 
-var (
-	errZeroLenMsg = errors.New("zero length msg")
-)
+var errZeroLenMsg = errors.New("zero length msg")
 
 // ReadRawMsgFromTCP reads msg from c in RFC 1035 format (msg is prefixed
 // with a two byte length field).

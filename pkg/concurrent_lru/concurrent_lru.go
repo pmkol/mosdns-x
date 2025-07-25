@@ -23,7 +23,7 @@ import (
 	"hash/maphash"
 	"sync"
 
-	"github.com/IrineSistiana/mosdns/v4/pkg/lru"
+	"github.com/pmkol/mosdns-x/pkg/lru"
 )
 
 type ShardedLRU[V any] struct {

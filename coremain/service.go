@@ -29,7 +29,7 @@ import (
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 
-	"github.com/IrineSistiana/mosdns/v4/mlog"
+	"github.com/pmkol/mosdns-x/mlog"
 )
 
 var (

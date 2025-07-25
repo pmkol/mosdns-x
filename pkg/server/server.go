@@ -29,7 +29,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/IrineSistiana/mosdns/v4/pkg/server/dns_handler"
+	"github.com/pmkol/mosdns-x/pkg/server/dns_handler"
 )
 
 var (
@@ -37,9 +37,8 @@ var (
 	errMissingHTTPHandler = errors.New("missing http handler")
 	errMissingDNSHandler  = errors.New("missing dns handler")
 )
-var (
-	nopLogger = zap.NewNop()
-)
+
+var nopLogger = zap.NewNop()
 
 type ServerOpts struct {
 	// Logger optionally specifies a logger for the server logging.

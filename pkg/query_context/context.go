@@ -30,7 +30,7 @@ import (
 	"github.com/miekg/dns"
 	"go.uber.org/zap"
 
-	"github.com/IrineSistiana/mosdns/v4/pkg/dnsutils"
+	"github.com/pmkol/mosdns-x/pkg/dnsutils"
 )
 
 // RequestMeta represents some metadata about the request.
@@ -59,8 +59,10 @@ type Context struct {
 	marks map[uint]struct{}
 }
 
-var contextUid uint32
-var zeroRequestMeta = &RequestMeta{}
+var (
+	contextUid      uint32
+	zeroRequestMeta = &RequestMeta{}
+)
 
 // NewContext creates a new query Context.
 // q is the query dns msg. It cannot be nil, or NewContext will panic.

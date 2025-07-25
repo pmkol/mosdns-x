@@ -24,10 +24,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/IrineSistiana/mosdns/v4/coremain"
-	"github.com/IrineSistiana/mosdns/v4/pkg/executable_seq"
-	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
-	"github.com/IrineSistiana/mosdns/v4/pkg/zone_file"
+	"github.com/pmkol/mosdns-x/coremain"
+	"github.com/pmkol/mosdns-x/pkg/executable_seq"
+	"github.com/pmkol/mosdns-x/pkg/query_context"
+	"github.com/pmkol/mosdns-x/pkg/zone_file"
 )
 
 const PluginType = "arbitrary"
@@ -59,7 +59,7 @@ func Init(bp *coremain.BP, v interface{}) (p coremain.Plugin, err error) {
 	args := v.(*Args)
 	m := new(zone_file.Matcher)
 
-	//TODO: Support data provider
+	// TODO: Support data provider
 	for i, s := range args.RR {
 		if err := m.Load(strings.NewReader(s)); err != nil {
 			return nil, fmt.Errorf("failed to load rr #%d [%s], %w", i, s, err)

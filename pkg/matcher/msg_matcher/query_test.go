@@ -27,11 +27,11 @@ import (
 
 	"github.com/miekg/dns"
 
-	"github.com/IrineSistiana/mosdns/v4/pkg/dnsutils"
-	"github.com/IrineSistiana/mosdns/v4/pkg/matcher/domain"
-	"github.com/IrineSistiana/mosdns/v4/pkg/matcher/elem"
-	"github.com/IrineSistiana/mosdns/v4/pkg/matcher/netlist"
-	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
+	"github.com/pmkol/mosdns-x/pkg/dnsutils"
+	"github.com/pmkol/mosdns-x/pkg/matcher/domain"
+	"github.com/pmkol/mosdns-x/pkg/matcher/elem"
+	"github.com/pmkol/mosdns-x/pkg/matcher/netlist"
+	"github.com/pmkol/mosdns-x/pkg/query_context"
 )
 
 func TestClientIPMatcher_Match(t *testing.T) {
@@ -127,6 +127,7 @@ func TestClientECSMatcher_Match(t *testing.T) {
 		})
 	}
 }
+
 func TestQNameMatcher_Match(t *testing.T) {
 	dm := domain.NewSubDomainMatcher[struct{}]()
 	dm.Add("com.", struct{}{})

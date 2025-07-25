@@ -31,15 +31,13 @@ import (
 	"github.com/miekg/dns"
 	"go.uber.org/zap"
 
-	"github.com/IrineSistiana/mosdns/v4/pkg/dnsutils"
-	"github.com/IrineSistiana/mosdns/v4/pkg/pool"
-	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
-	"github.com/IrineSistiana/mosdns/v4/pkg/server/dns_handler"
+	"github.com/pmkol/mosdns-x/pkg/dnsutils"
+	"github.com/pmkol/mosdns-x/pkg/pool"
+	"github.com/pmkol/mosdns-x/pkg/query_context"
+	"github.com/pmkol/mosdns-x/pkg/server/dns_handler"
 )
 
-var (
-	nopLogger = zap.NewNop()
-)
+var nopLogger = zap.NewNop()
 
 type HandlerOpts struct {
 	// DNSHandler is required.

@@ -28,18 +28,16 @@ import (
 	"github.com/miekg/dns"
 	"go.uber.org/zap"
 
-	"github.com/IrineSistiana/mosdns/v4/pkg/executable_seq"
-	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
-	"github.com/IrineSistiana/mosdns/v4/pkg/utils"
+	"github.com/pmkol/mosdns-x/pkg/executable_seq"
+	"github.com/pmkol/mosdns-x/pkg/query_context"
+	"github.com/pmkol/mosdns-x/pkg/utils"
 )
 
 const (
 	defaultQueryTimeout = time.Second * 5
 )
 
-var (
-	nopLogger = zap.NewNop()
-)
+var nopLogger = zap.NewNop()
 
 // Handler handles dns query.
 type Handler interface {

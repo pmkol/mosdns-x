@@ -25,15 +25,13 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/IrineSistiana/mosdns/v4/coremain"
-	"github.com/IrineSistiana/mosdns/v4/mlog"
-	_ "github.com/IrineSistiana/mosdns/v4/plugin"
-	_ "github.com/IrineSistiana/mosdns/v4/tools"
+	"github.com/pmkol/mosdns-x/coremain"
+	"github.com/pmkol/mosdns-x/mlog"
+	_ "github.com/pmkol/mosdns-x/plugin"
+	_ "github.com/pmkol/mosdns-x/tools"
 )
 
-var (
-	version = "dev/unknown"
-)
+var version = "dev/unknown"
 
 func init() {
 	coremain.AddSubCmd(&cobra.Command{

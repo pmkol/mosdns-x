@@ -25,7 +25,7 @@ import (
 
 	"github.com/miekg/dns"
 
-	"github.com/IrineSistiana/mosdns/v4/pkg/matcher/netlist"
+	"github.com/pmkol/mosdns-x/pkg/matcher/netlist"
 )
 
 func TestAAAAAIPMatcher_MatchMsg(t *testing.T) {

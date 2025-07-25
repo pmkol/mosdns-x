@@ -20,7 +20,7 @@
 package ipset
 
 import (
-	"github.com/IrineSistiana/mosdns/v4/coremain"
+	"github.com/pmkol/mosdns-x/coremain"
 )
 
 const PluginType = "ipset"

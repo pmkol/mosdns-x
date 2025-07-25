@@ -23,10 +23,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/IrineSistiana/mosdns/v4/coremain"
-	"github.com/IrineSistiana/mosdns/v4/pkg/executable_seq"
-	"github.com/IrineSistiana/mosdns/v4/pkg/pool"
-	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
+	"github.com/pmkol/mosdns-x/coremain"
+	"github.com/pmkol/mosdns-x/pkg/executable_seq"
+	"github.com/pmkol/mosdns-x/pkg/pool"
+	"github.com/pmkol/mosdns-x/pkg/query_context"
 )
 
 const PluginType = "sleep"

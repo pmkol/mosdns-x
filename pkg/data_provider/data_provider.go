@@ -28,7 +28,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"go.uber.org/zap"
 
-	"github.com/IrineSistiana/mosdns/v4/pkg/safe_close"
+	"github.com/pmkol/mosdns-x/pkg/safe_close"
 )
 
 type DataManager struct {

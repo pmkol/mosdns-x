@@ -25,9 +25,9 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/IrineSistiana/mosdns/v4/coremain"
-	"github.com/IrineSistiana/mosdns/v4/pkg/executable_seq"
-	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
+	"github.com/pmkol/mosdns-x/coremain"
+	"github.com/pmkol/mosdns-x/pkg/executable_seq"
+	"github.com/pmkol/mosdns-x/pkg/query_context"
 )
 
 const PluginType = "metrics_collector"
@@ -50,7 +50,7 @@ type Collector struct {
 }
 
 func NewCollector(bp *coremain.BP, args *Args) *Collector {
-	var c = &Collector{
+	c := &Collector{
 		BP: bp,
 		queryTotal: prometheus.NewCounter(prometheus.CounterOpts{
 			Name: "query_total",

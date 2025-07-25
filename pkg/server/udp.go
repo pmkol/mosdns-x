@@ -28,9 +28,9 @@ import (
 	"github.com/miekg/dns"
 	"go.uber.org/zap"
 
-	"github.com/IrineSistiana/mosdns/v4/pkg/pool"
-	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
-	"github.com/IrineSistiana/mosdns/v4/pkg/utils"
+	"github.com/pmkol/mosdns-x/pkg/pool"
+	"github.com/pmkol/mosdns-x/pkg/query_context"
+	"github.com/pmkol/mosdns-x/pkg/utils"
 )
 
 // cmcUDPConn can read and write cmsg.

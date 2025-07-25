@@ -27,7 +27,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/IrineSistiana/mosdns/v4/pkg/utils"
+	"github.com/pmkol/mosdns-x/pkg/utils"
 )
 
 // BuildExecutableLogicTree parses in into a ExecutableChainNode.

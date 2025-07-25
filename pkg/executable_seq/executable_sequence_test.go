@@ -28,7 +28,7 @@ import (
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v3"
 
-	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
+	"github.com/pmkol/mosdns-x/pkg/query_context"
 )
 
 func Test_ECS(t *testing.T) {
@@ -37,31 +37,35 @@ func Test_ECS(t *testing.T) {
 	target := new(dns.Msg)
 	target.Id = dns.Id()
 
-	var tests = []struct {
+	tests := []struct {
 		name       string
 		yamlStr    string
 		wantTarget bool
 		wantErr    error
 	}{
-
-		{name: "test multiple if", yamlStr: `
+		{
+			name: "test multiple if", yamlStr: `
 exec:
 - if: matched
   exec: [exec,exec,exec]
 - if: matched
   exec: exec_target
 `,
-			wantTarget: true, wantErr: nil},
+			wantTarget: true, wantErr: nil,
+		},
 
-		{name: "test if else_exec", yamlStr: `
+		{
+			name: "test if else_exec", yamlStr: `
 exec:
 - if: not_matched
   exec: exec_err
   else_exec: exec_target
 `,
-			wantTarget: true, wantErr: nil},
+			wantTarget: true, wantErr: nil,
+		},
 
-		{name: "test multi if else_exec", yamlStr: `
+		{
+			name: "test multi if else_exec", yamlStr: `
 exec:
 - if: not_matched
   exec: [exec_err]
@@ -70,9 +74,11 @@ exec:
   exec: [exec_err]
   else_exec: [exec_target]
 `,
-			wantTarget: true, wantErr: nil},
+			wantTarget: true, wantErr: nil,
+		},
 
-		{name: "test nested if", yamlStr: `
+		{
+			name: "test nested if", yamlStr: `
 exec:
 - if: matched
   exec: 
@@ -81,40 +87,50 @@ exec:
   - if: matched
     exec: exec_target
 `,
-			wantTarget: true, wantErr: nil},
+			wantTarget: true, wantErr: nil,
+		},
 
-		{name: "test if err", yamlStr: `
+		{
+			name: "test if err", yamlStr: `
 exec:
 - if: "not_matched || match_err" # err
   exec: exec
 `,
-			wantTarget: false, wantErr: mErr},
+			wantTarget: false, wantErr: mErr,
+		},
 
-		{name: "test exec err", yamlStr: `
+		{
+			name: "test exec err", yamlStr: `
 exec:
 - exec
 - exec_err
 `,
-			wantTarget: false, wantErr: eErr},
+			wantTarget: false, wantErr: eErr,
+		},
 
-		{name: "test exec err in if branch", yamlStr: `
+		{
+			name: "test exec err in if branch", yamlStr: `
 exec:
 - if: matched 
   exec: 
   - exec
   - exec_err
 `,
-			wantTarget: false, wantErr: eErr},
+			wantTarget: false, wantErr: eErr,
+		},
 
-		{name: "test return in main sequence", yamlStr: `
+		{
+			name: "test return in main sequence", yamlStr: `
 exec:
 - exec
 - exec_skip
 - exec_err 	# skipped, should not reach here.
 `,
-			wantTarget: false, wantErr: nil},
+			wantTarget: false, wantErr: nil,
+		},
 
-		{name: "test early return in if branch", yamlStr: `
+		{
+			name: "test early return in if branch", yamlStr: `
 exec:
 - if: matched
   exec: 
@@ -122,7 +138,8 @@ exec:
     - exec_err # skipped, should not reach here.
 - exec_err
 `,
-			wantTarget: false, wantErr: nil},
+			wantTarget: false, wantErr: nil,
+		},
 	}
 
 	matchers := make(map[string]Matcher)
@@ -185,7 +202,7 @@ exec:
 				return
 			}
 
-			var gotTarget = qCtx.R()
+			gotTarget := qCtx.R()
 			if tt.wantTarget && gotTarget.Id != target.Id {
 				t.Errorf("Exec() gotTarget = %d, want %d", gotTarget.Id, target.Id)
 			}
@@ -194,7 +211,6 @@ exec:
 }
 
 func Test_LoadBalance(t *testing.T) {
-
 	eErr := errors.New("eErr")
 	target := new(dns.Msg)
 	target.Id = dns.Id()
@@ -204,13 +220,13 @@ func Test_LoadBalance(t *testing.T) {
 		err    error
 	}
 
-	var tests = []struct {
+	tests := []struct {
 		name    string
 		yamlStr string
 		want    []want
 	}{
-
-		{name: "test round robin", yamlStr: `
+		{
+			name: "test round robin", yamlStr: `
 exec:
 - load_balance:
   - - exec_err
@@ -222,9 +238,11 @@ exec:
 				{false, nil},
 				{true, nil},
 				{false, eErr},
-			}},
+			},
+		},
 
-		{name: "test node connection", yamlStr: `
+		{
+			name: "test node connection", yamlStr: `
 exec:
 - load_balance:
   - - exec_err
@@ -236,7 +254,8 @@ exec:
 				{false, nil},
 				{true, nil},
 				{false, eErr},
-			}},
+			},
+		},
 	}
 
 	execs := make(map[string]Executable)
@@ -280,13 +299,12 @@ exec:
 						return
 					}
 
-					var gotTarget = qCtx.R()
+					gotTarget := qCtx.R()
 					if want.target && gotTarget.Id != target.Id {
 						t.Errorf("Exec() gotTarget = %d, want %d", gotTarget.Id, target.Id)
 					}
 				}
 			}
-
 		})
 	}
 }

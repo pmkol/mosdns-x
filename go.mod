@@ -1,4 +1,4 @@
-module github.com/IrineSistiana/mosdns/v4
+module github.com/pmkol/mosdns-x
 
 go 1.18
 

@@ -31,8 +31,8 @@ import (
 	"github.com/go-redis/redis/v8"
 	"go.uber.org/zap"
 
-	"github.com/IrineSistiana/mosdns/v4/pkg/pool"
-	"github.com/IrineSistiana/mosdns/v4/pkg/utils"
+	"github.com/pmkol/mosdns-x/pkg/pool"
+	"github.com/pmkol/mosdns-x/pkg/utils"
 )
 
 var nopLogger = zap.NewNop()

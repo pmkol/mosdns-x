@@ -24,10 +24,10 @@ import (
 
 	"github.com/miekg/dns"
 
-	"github.com/IrineSistiana/mosdns/v4/coremain"
-	"github.com/IrineSistiana/mosdns/v4/pkg/dnsutils"
-	"github.com/IrineSistiana/mosdns/v4/pkg/executable_seq"
-	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
+	"github.com/pmkol/mosdns-x/coremain"
+	"github.com/pmkol/mosdns-x/pkg/dnsutils"
+	"github.com/pmkol/mosdns-x/pkg/executable_seq"
+	"github.com/pmkol/mosdns-x/pkg/query_context"
 )
 
 const PluginType = "padding"
@@ -44,8 +44,10 @@ func init() {
 	})
 }
 
-var _ coremain.ExecutablePlugin = (*PadQuery)(nil)
-var _ coremain.ExecutablePlugin = (*ResponsePaddingHandler)(nil)
+var (
+	_ coremain.ExecutablePlugin = (*PadQuery)(nil)
+	_ coremain.ExecutablePlugin = (*ResponsePaddingHandler)(nil)
+)
 
 const (
 	minimumQueryLen    = 128

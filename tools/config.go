@@ -25,7 +25,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/IrineSistiana/mosdns/v4/mlog"
+	"github.com/pmkol/mosdns-x/mlog"
 )
 
 func newConvCmd() *cobra.Command {

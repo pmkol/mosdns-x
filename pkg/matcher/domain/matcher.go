@@ -24,14 +24,16 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/IrineSistiana/mosdns/v4/pkg/utils"
+	"github.com/pmkol/mosdns-x/pkg/utils"
 )
 
-var _ WriteableMatcher[any] = (*MixMatcher[any])(nil)
-var _ WriteableMatcher[any] = (*SubDomainMatcher[any])(nil)
-var _ WriteableMatcher[any] = (*FullMatcher[any])(nil)
-var _ WriteableMatcher[any] = (*KeywordMatcher[any])(nil)
-var _ WriteableMatcher[any] = (*RegexMatcher[any])(nil)
+var (
+	_ WriteableMatcher[any] = (*MixMatcher[any])(nil)
+	_ WriteableMatcher[any] = (*SubDomainMatcher[any])(nil)
+	_ WriteableMatcher[any] = (*FullMatcher[any])(nil)
+	_ WriteableMatcher[any] = (*KeywordMatcher[any])(nil)
+	_ WriteableMatcher[any] = (*RegexMatcher[any])(nil)
+)
 
 type SubDomainMatcher[T any] struct {
 	root *labelNode[T]

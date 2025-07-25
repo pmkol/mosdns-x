@@ -33,7 +33,7 @@ import (
 	"github.com/miekg/dns"
 	"go.uber.org/zap"
 
-	"github.com/IrineSistiana/mosdns/v4/pkg/dnsutils"
+	"github.com/pmkol/mosdns-x/pkg/dnsutils"
 )
 
 func TestTransport_Exchange(t *testing.T) {

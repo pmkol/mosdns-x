@@ -30,8 +30,8 @@ import (
 
 	"github.com/miekg/dns"
 
-	"github.com/IrineSistiana/mosdns/v4/pkg/pool"
-	"github.com/IrineSistiana/mosdns/v4/pkg/utils"
+	"github.com/pmkol/mosdns-x/pkg/pool"
+	"github.com/pmkol/mosdns-x/pkg/utils"
 )
 
 const (
@@ -61,9 +61,7 @@ func (u *Upstream) Close() error {
 	return nil
 }
 
-var (
-	bufPool512 = pool.NewBytesBufPool(512)
-)
+var bufPool512 = pool.NewBytesBufPool(512)
 
 func (u *Upstream) ExchangeContext(ctx context.Context, q *dns.Msg) (*dns.Msg, error) {
 	wire, buf, err := pool.PackBuffer(q)

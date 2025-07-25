@@ -26,13 +26,13 @@ import (
 	"github.com/miekg/dns"
 	"go.uber.org/zap"
 
-	"github.com/IrineSistiana/mosdns/v4/coremain"
-	"github.com/IrineSistiana/mosdns/v4/pkg/executable_seq"
-	"github.com/IrineSistiana/mosdns/v4/pkg/matcher/domain"
-	"github.com/IrineSistiana/mosdns/v4/pkg/matcher/elem"
-	"github.com/IrineSistiana/mosdns/v4/pkg/matcher/msg_matcher"
-	"github.com/IrineSistiana/mosdns/v4/pkg/matcher/netlist"
-	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
+	"github.com/pmkol/mosdns-x/coremain"
+	"github.com/pmkol/mosdns-x/pkg/executable_seq"
+	"github.com/pmkol/mosdns-x/pkg/matcher/domain"
+	"github.com/pmkol/mosdns-x/pkg/matcher/elem"
+	"github.com/pmkol/mosdns-x/pkg/matcher/msg_matcher"
+	"github.com/pmkol/mosdns-x/pkg/matcher/netlist"
+	"github.com/pmkol/mosdns-x/pkg/query_context"
 )
 
 const PluginType = "response_matcher"

@@ -28,9 +28,9 @@ import (
 	"github.com/pires/go-proxyproto"
 	"go.uber.org/zap"
 
-	"github.com/IrineSistiana/mosdns/v4/pkg/server"
-	"github.com/IrineSistiana/mosdns/v4/pkg/server/dns_handler"
-	"github.com/IrineSistiana/mosdns/v4/pkg/server/http_handler"
+	"github.com/pmkol/mosdns-x/pkg/server"
+	"github.com/pmkol/mosdns-x/pkg/server/dns_handler"
+	"github.com/pmkol/mosdns-x/pkg/server/http_handler"
 )
 
 const defaultQueryTimeout = time.Second * 5

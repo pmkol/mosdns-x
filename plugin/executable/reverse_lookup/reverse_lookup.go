@@ -30,13 +30,13 @@ import (
 	"github.com/go-redis/redis/v8"
 	"github.com/miekg/dns"
 
-	"github.com/IrineSistiana/mosdns/v4/coremain"
-	"github.com/IrineSistiana/mosdns/v4/pkg/cache"
-	"github.com/IrineSistiana/mosdns/v4/pkg/cache/mem_cache"
-	"github.com/IrineSistiana/mosdns/v4/pkg/cache/redis_cache"
-	"github.com/IrineSistiana/mosdns/v4/pkg/executable_seq"
-	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
-	"github.com/IrineSistiana/mosdns/v4/pkg/utils"
+	"github.com/pmkol/mosdns-x/coremain"
+	"github.com/pmkol/mosdns-x/pkg/cache"
+	"github.com/pmkol/mosdns-x/pkg/cache/mem_cache"
+	"github.com/pmkol/mosdns-x/pkg/cache/redis_cache"
+	"github.com/pmkol/mosdns-x/pkg/executable_seq"
+	"github.com/pmkol/mosdns-x/pkg/query_context"
+	"github.com/pmkol/mosdns-x/pkg/utils"
 )
 
 const (

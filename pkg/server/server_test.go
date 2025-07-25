@@ -30,9 +30,9 @@ import (
 	"github.com/AdguardTeam/dnsproxy/upstream"
 	"github.com/miekg/dns"
 
-	"github.com/IrineSistiana/mosdns/v4/pkg/server/dns_handler"
-	"github.com/IrineSistiana/mosdns/v4/pkg/server/http_handler"
-	"github.com/IrineSistiana/mosdns/v4/pkg/utils"
+	"github.com/pmkol/mosdns-x/pkg/server/dns_handler"
+	"github.com/pmkol/mosdns-x/pkg/server/http_handler"
+	"github.com/pmkol/mosdns-x/pkg/utils"
 )
 
 func getListener(tb testing.TB) net.Listener {
@@ -93,12 +93,10 @@ func exchangeTest(tb testing.TB, u upstream.Upstream) {
 	wg.Wait()
 }
 
-var (
-	opt = &upstream.Options{
-		Timeout:            time.Second * 2,
-		InsecureSkipVerify: true,
-	}
-)
+var opt = &upstream.Options{
+	Timeout:            time.Second * 2,
+	InsecureSkipVerify: true,
+}
 
 func TestUDPServer(t *testing.T) {
 	dnsHandler := &dns_handler.DummyServerHandler{T: t}

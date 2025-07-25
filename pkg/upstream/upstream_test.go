@@ -31,7 +31,7 @@ import (
 
 	"github.com/miekg/dns"
 
-	"github.com/IrineSistiana/mosdns/v4/pkg/utils"
+	"github.com/pmkol/mosdns-x/pkg/utils"
 )
 
 func newUDPTestServer(t testing.TB, handler dns.Handler) (addr string, shutdownFunc func()) {
@@ -99,7 +99,6 @@ var m = map[string]newTestServerFunc{
 }
 
 func Test_fastUpstream(t *testing.T) {
-
 	// TODO: add test for doh
 	// TODO: add test for socks5
 
@@ -107,7 +106,6 @@ func Test_fastUpstream(t *testing.T) {
 	for scheme, f := range m {
 		for _, bigMsg := range [...]bool{true, false} {
 			for _, latency := range [...]time.Duration{0, time.Millisecond * 10} {
-
 				// client specific
 				for _, idleTimeout := range [...]time.Duration{0, time.Second} {
 
@@ -144,7 +142,6 @@ func Test_fastUpstream(t *testing.T) {
 				}
 			}
 		}
-
 	}
 }
 
@@ -177,7 +174,6 @@ func testUpstream(u Upstream) error {
 			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 			defer cancel()
 			r, err := u.ExchangeContext(ctx, q)
-
 			if err != nil {
 				logErr(err)
 				return

@@ -28,7 +28,7 @@ import (
 	"github.com/miekg/dns"
 	"go.uber.org/zap"
 
-	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
+	"github.com/pmkol/mosdns-x/pkg/query_context"
 )
 
 func Test_FallbackECS_fallback(t *testing.T) {
@@ -77,7 +77,6 @@ func Test_FallbackECS_fallback(t *testing.T) {
 	ctx := context.Background()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			p1.Lock()
 			p1.WantR = tt.r1
 			p1.WantErr = tt.e1
@@ -103,7 +102,6 @@ func Test_FallbackECS_fallback(t *testing.T) {
 }
 
 func Test_FallbackECS_fast_fallback(t *testing.T) {
-
 	r1 := new(dns.Msg)
 	r2 := new(dns.Msg)
 
@@ -178,7 +176,6 @@ func Test_FallbackECS_fast_fallback(t *testing.T) {
 			if tt.wantR != qCtx.R() {
 				t.Fatalf("execCmd() qCtx.R() = %p, wantR %p", qCtx.R(), tt.wantR)
 			}
-
 		})
 	}
 }

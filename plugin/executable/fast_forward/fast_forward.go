@@ -31,12 +31,12 @@ import (
 
 	"github.com/miekg/dns"
 
-	"github.com/IrineSistiana/mosdns/v4/coremain"
-	"github.com/IrineSistiana/mosdns/v4/pkg/bundled_upstream"
-	"github.com/IrineSistiana/mosdns/v4/pkg/executable_seq"
-	"github.com/IrineSistiana/mosdns/v4/pkg/query_context"
-	"github.com/IrineSistiana/mosdns/v4/pkg/upstream"
-	"github.com/IrineSistiana/mosdns/v4/pkg/utils"
+	"github.com/pmkol/mosdns-x/coremain"
+	"github.com/pmkol/mosdns-x/pkg/bundled_upstream"
+	"github.com/pmkol/mosdns-x/pkg/executable_seq"
+	"github.com/pmkol/mosdns-x/pkg/query_context"
+	"github.com/pmkol/mosdns-x/pkg/upstream"
+	"github.com/pmkol/mosdns-x/pkg/utils"
 )
 
 const PluginType = "fast_forward"
@@ -133,7 +133,6 @@ func newFastForward(bp *coremain.BP, args *Args) (*fastForward, error) {
 		}
 
 		u, err := upstream.NewUpstream(c.Addr, opt)
-
 		if err != nil {
 			return nil, fmt.Errorf("failed to init upstream: %w", err)
 		}

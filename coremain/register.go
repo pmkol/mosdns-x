@@ -27,7 +27,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
-	"github.com/IrineSistiana/mosdns/v4/pkg/utils"
+	"github.com/pmkol/mosdns-x/pkg/utils"
 )
 
 // NewPluginArgsFunc represents a func that creates a new args object.
@@ -42,13 +42,11 @@ type PluginTypeInfo struct {
 	NewArgs   NewPluginArgsFunc
 }
 
-var (
-	// pluginTypeRegister stores init funcs for certain plugin types
-	pluginTypeRegister struct {
-		sync.RWMutex
-		m map[string]PluginTypeInfo
-	}
-)
+// pluginTypeRegister stores init funcs for certain plugin types
+var pluginTypeRegister struct {
+	sync.RWMutex
+	m map[string]PluginTypeInfo
+}
 
 // RegNewPluginFunc registers the type.
 // If the type has been registered. RegNewPluginFunc will panic.

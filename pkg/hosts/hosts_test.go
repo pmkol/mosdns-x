@@ -26,7 +26,7 @@ import (
 
 	"github.com/miekg/dns"
 
-	"github.com/IrineSistiana/mosdns/v4/pkg/matcher/domain"
+	"github.com/pmkol/mosdns-x/pkg/matcher/domain"
 )
 
 var test_hosts = `

@@ -27,8 +27,8 @@ import (
 
 	"github.com/miekg/dns"
 
-	"github.com/IrineSistiana/mosdns/v4/pkg/dnsutils"
-	"github.com/IrineSistiana/mosdns/v4/pkg/matcher/domain"
+	"github.com/pmkol/mosdns-x/pkg/dnsutils"
+	"github.com/pmkol/mosdns-x/pkg/matcher/domain"
 )
 
 type Hosts struct {

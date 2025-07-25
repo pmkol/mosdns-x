@@ -36,11 +36,11 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/net/http2"
 
-	"github.com/IrineSistiana/mosdns/v4/pkg/dnsutils"
-	"github.com/IrineSistiana/mosdns/v4/pkg/upstream/bootstrap"
-	"github.com/IrineSistiana/mosdns/v4/pkg/upstream/doh"
-	"github.com/IrineSistiana/mosdns/v4/pkg/upstream/h3roundtripper"
-	"github.com/IrineSistiana/mosdns/v4/pkg/upstream/transport"
+	"github.com/pmkol/mosdns-x/pkg/dnsutils"
+	"github.com/pmkol/mosdns-x/pkg/upstream/bootstrap"
+	"github.com/pmkol/mosdns-x/pkg/upstream/doh"
+	"github.com/pmkol/mosdns-x/pkg/upstream/h3roundtripper"
+	"github.com/pmkol/mosdns-x/pkg/upstream/transport"
 )
 
 const (
