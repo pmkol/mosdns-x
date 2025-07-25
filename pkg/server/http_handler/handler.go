@@ -84,8 +84,9 @@ func (h *Handler) warnErr(req *http.Request, msg string, err error) {
 func (h *Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	addrPort, err := netip.ParseAddrPort(req.RemoteAddr)
 	if err != nil {
-		h.opts.Logger.Error("failed to parse request remote addr", zap.String("addr", req.RemoteAddr), zap.Error(err))
+		w.Write([]byte(fmt.Errorf("failed to parse request remote addr: %s", err).Error()))
 		w.WriteHeader(http.StatusInternalServerError)
+		h.opts.Logger.Error("failed to parse request remote addr", zap.String("addr", req.RemoteAddr), zap.Error(err))
 		return
 	}
 	clientAddr := addrPort.Addr()
@@ -95,8 +96,9 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		if xff := req.Header.Get(header); len(xff) != 0 {
 			addr, err := readClientAddrFromXFF(xff)
 			if err != nil {
-				h.warnErr(req, "failed to get client ip from header", fmt.Errorf("failed to prase header %s: %s, %s", header, xff, err))
+				w.Write([]byte(fmt.Errorf("failed to get client ip from header: %s", err).Error()))
 				w.WriteHeader(http.StatusBadRequest)
+				h.warnErr(req, "failed to get client ip from header", fmt.Errorf("failed to prase header %s: %s, %s", header, xff, err))
 				return
 			}
 			clientAddr = addr
@@ -105,6 +107,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	// check url path
 	if len(h.opts.Path) != 0 && req.URL.Path != h.opts.Path {
+		w.Write([]byte(fmt.Errorf("invalid request path: %s", err).Error()))
 		w.WriteHeader(http.StatusNotFound)
 		h.warnErr(req, "invalid request", fmt.Errorf("invalid request path %s", req.URL.Path))
 		return
@@ -113,18 +116,23 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	// read msg
 	q, err := ReadMsgFromReq(req)
 	if err != nil {
-		h.warnErr(req, "invalid request", err)
+		w.Write([]byte(fmt.Errorf("invalid request: %s", err).Error()))
 		w.WriteHeader(http.StatusBadRequest)
+		h.warnErr(req, "invalid request", err)
 		return
 	}
 
 	r, err := h.opts.DNSHandler.ServeDNS(req.Context(), q, &query_context.RequestMeta{ClientAddr: clientAddr})
 	if err != nil {
-		panic(err.Error()) // Force http server to close connection.
+		w.Write([]byte(fmt.Errorf("failed to unpack handler's response: %s", err).Error()))
+		w.WriteHeader(http.StatusInternalServerError)
+		h.warnErr(req, "failed to unpack handler's response", err)
+		return
 	}
 
 	b, buf, err := pool.PackBuffer(r)
 	if err != nil {
+		w.Write([]byte(fmt.Errorf("failed to unpack handler's response: %s", err).Error()))
 		w.WriteHeader(http.StatusInternalServerError)
 		h.warnErr(req, "failed to unpack handler's response", err)
 		return
