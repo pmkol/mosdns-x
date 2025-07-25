@@ -96,9 +96,9 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		if xff := req.Header.Get(header); len(xff) != 0 {
 			addr, err := readClientAddrFromXFF(xff)
 			if err != nil {
-				w.Write([]byte(fmt.Errorf("failed to get client ip from header: %s", err).Error()))
+				w.Write([]byte("invalid client address"))
 				w.WriteHeader(http.StatusBadRequest)
-				h.warnErr(req, "failed to get client ip from header", fmt.Errorf("failed to prase header %s: %s, %s", header, xff, err))
+				h.warnErr(req, "failed to get client ip from header", err)
 				return
 			}
 			clientAddr = addr
@@ -107,34 +107,83 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	// check url path
 	if len(h.opts.Path) != 0 && req.URL.Path != h.opts.Path {
-		w.Write([]byte(fmt.Errorf("invalid request path: %s", err).Error()))
+		w.Write([]byte("invalid request path"))
 		w.WriteHeader(http.StatusNotFound)
 		h.warnErr(req, "invalid request", fmt.Errorf("invalid request path %s", req.URL.Path))
 		return
 	}
 
-	// read msg
-	q, err := ReadMsgFromReq(req)
-	if err != nil {
-		w.Write([]byte(fmt.Errorf("invalid request: %s", err).Error()))
-		w.WriteHeader(http.StatusBadRequest)
-		h.warnErr(req, "invalid request", err)
+	// check accept header
+	if accept := req.Header.Get("Accept"); accept != "application/dns-message" {
+		w.Write([]byte("invalid Accept header"))
+		w.WriteHeader(http.StatusPreconditionFailed)
+		h.warnErr(req, "invalid Accept header", fmt.Errorf("invalid Accept header %s", accept))
 		return
 	}
 
-	r, err := h.opts.DNSHandler.ServeDNS(req.Context(), q, &query_context.RequestMeta{ClientAddr: clientAddr})
+	var b []byte
+
+	switch req.Method {
+	case http.MethodGet:
+		s := req.URL.Query().Get("dns")
+		if len(s) == 0 {
+			w.Write([]byte("no dns param"))
+			w.WriteHeader(http.StatusBadRequest)
+			h.warnErr(req, "no dns param", errors.New("no dns param"))
+			return
+		}
+
+		b, err = base64.RawURLEncoding.DecodeString(s)
+		if err != nil {
+			w.Write([]byte("invalid dns param"))
+			w.WriteHeader(http.StatusBadRequest)
+			h.warnErr(req, "decode base64 query failed", fmt.Errorf(" base64 query failed: %s", err))
+			return
+		}
+	case http.MethodPost:
+		if contentType := req.Header.Get("Content-Type"); contentType != "application/dns-message" {
+			w.Write([]byte("invalid Content-Type"))
+			w.WriteHeader(http.StatusUnsupportedMediaType)
+			h.warnErr(req, "invalid Content-Type", fmt.Errorf("invalid Content-Type %s", contentType))
+			return
+		}
+
+		b, err = io.ReadAll(req.Body)
+		if err != nil {
+			w.Write([]byte("invalid request body"))
+			w.WriteHeader(http.StatusBadRequest)
+			h.warnErr(req, "read request body failed", err)
+			return
+		}
+	default:
+		w.Write([]byte("invalid request method"))
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		h.warnErr(req, "invalid method", fmt.Errorf("invalid method %s", req.Method))
+		return
+	}
+
+	// read msg
+	m := new(dns.Msg)
+	if err := m.Unpack(b); err != nil {
+		w.Write([]byte("invalid request message"))
+		w.WriteHeader(http.StatusBadRequest)
+		h.warnErr(req, "unpack request failed", err)
+		return
+	}
+
+	r, err := h.opts.DNSHandler.ServeDNS(req.Context(), m, &query_context.RequestMeta{ClientAddr: clientAddr})
 	if err != nil {
-		w.Write([]byte(fmt.Errorf("failed to unpack handler's response: %s", err).Error()))
+		w.Write([]byte("unpack response failed"))
 		w.WriteHeader(http.StatusInternalServerError)
-		h.warnErr(req, "failed to unpack handler's response", err)
+		h.warnErr(req, "unpack response failed", err)
 		return
 	}
 
 	b, buf, err := pool.PackBuffer(r)
 	if err != nil {
-		w.Write([]byte(fmt.Errorf("failed to unpack handler's response: %s", err).Error()))
+		w.Write([]byte("pack response failed"))
 		w.WriteHeader(http.StatusInternalServerError)
-		h.warnErr(req, "failed to unpack handler's response", err)
+		h.warnErr(req, "pack response failed", err)
 		return
 	}
 	defer buf.Release()
@@ -142,7 +191,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "application/dns-message")
 	w.Header().Set("Cache-Control", fmt.Sprintf("max-age=%d", dnsutils.GetMinimalTTL(r)))
 	if _, err := w.Write(b); err != nil {
-		h.warnErr(req, "failed to write response", err)
+		h.warnErr(req, "write response failed", err)
 		return
 	}
 }
@@ -152,57 +201,4 @@ func readClientAddrFromXFF(s string) (netip.Addr, error) {
 		return netip.ParseAddr(s[:i])
 	}
 	return netip.ParseAddr(s)
-}
-
-var errInvalidMediaType = errors.New("missing or invalid media type header")
-
-var bufPool = pool.NewBytesBufPool(512)
-
-func ReadMsgFromReq(req *http.Request) (*dns.Msg, error) {
-	var b []byte
-
-	switch req.Method {
-	case http.MethodGet:
-		// Check accept header
-		if req.Header.Get("Accept") != "application/dns-message" {
-			return nil, errInvalidMediaType
-		}
-
-		s := req.URL.Query().Get("dns")
-		if len(s) == 0 {
-			return nil, errors.New("no dns parameter")
-		}
-		msgSize := base64.RawURLEncoding.DecodedLen(len(s))
-		if msgSize > dns.MaxMsgSize {
-			return nil, fmt.Errorf("msg length %d is too big", msgSize)
-		}
-
-		var err error
-		b, err = base64.RawURLEncoding.DecodeString(s)
-		if err != nil {
-			return nil, fmt.Errorf("failed to decode base64 query: %w", err)
-		}
-
-	case http.MethodPost:
-		// Check Content-Type header
-		if req.Header.Get("Content-Type") != "application/dns-message" {
-			return nil, errInvalidMediaType
-		}
-
-		buf := bufPool.Get()
-		defer bufPool.Release(buf)
-		_, err := buf.ReadFrom(io.LimitReader(req.Body, dns.MaxMsgSize))
-		if err != nil {
-			return nil, fmt.Errorf("failed to read request body: %w", err)
-		}
-		b = buf.Bytes()
-	default:
-		return nil, fmt.Errorf("unsupported method: %s", req.Method)
-	}
-
-	m := new(dns.Msg)
-	if err := m.Unpack(b); err != nil {
-		return nil, fmt.Errorf("failed to unpack msg [%x], %w", b, err)
-	}
-	return m, nil
 }
