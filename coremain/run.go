@@ -25,8 +25,8 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/go-viper/mapstructure/v2"
 	"github.com/kardianos/service"
-	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
