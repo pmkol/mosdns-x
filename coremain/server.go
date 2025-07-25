@@ -123,7 +123,7 @@ func (m *Mosdns) startServerListener(cfg *ServerListenerConfig, dnsHandler dns_h
 
 	var run func() error
 	switch cfg.Protocol {
-	case "", "udp":
+	case "", "udp", "quic", "doq":
 		var conn net.PacketConn
 		var err error
 		if cfg.UnixDomainSocket {
@@ -140,26 +140,13 @@ func (m *Mosdns) startServerListener(cfg *ServerListenerConfig, dnsHandler dns_h
 		if err != nil {
 			return err
 		}
-		run = func() error { return s.ServeUDP(conn) }
-	case "quic", "doq":
-		var conn net.PacketConn
-		var err error
-		if cfg.UnixDomainSocket {
-			if !abstract {
-				os.Remove(cfg.Addr)
-			}
-			conn, err = config.ListenPacket(context.Background(), "unixgram", cfg.Addr)
-			if !abstract {
-				os.Chmod(cfg.Addr, 0x777)
-			}
-		} else {
-			conn, err = config.ListenPacket(context.Background(), "udp", cfg.Addr)
+		switch cfg.Protocol {
+		case "", "udp":
+			run = func() error { return s.ServeUDP(conn) }
+		case "quic", "doq":
+			run = func() error { return s.ServeQUIC(conn) }
 		}
-		if err != nil {
-			return err
-		}
-		run = func() error { return s.ServeQUIC(conn) }
-	case "tcp":
+	case "tcp", "tls", "dot", "http", "https", "doh":
 		var l net.Listener
 		var err error
 		if cfg.UnixDomainSocket {
@@ -179,70 +166,16 @@ func (m *Mosdns) startServerListener(cfg *ServerListenerConfig, dnsHandler dns_h
 		if cfg.ProxyProtocol {
 			l = &proxyproto.Listener{Listener: l, Policy: requirePP}
 		}
-		run = func() error { return s.ServeTCP(l) }
-	case "tls", "dot":
-		var l net.Listener
-		var err error
-		if cfg.UnixDomainSocket {
-			if !abstract {
-				os.Remove(cfg.Addr)
-			}
-			l, err = config.Listen(context.Background(), "unix", cfg.Addr)
-			if !abstract {
-				os.Chmod(cfg.Addr, 0x777)
-			}
-		} else {
-			l, err = config.Listen(context.Background(), "tcp", cfg.Addr)
+		switch cfg.Protocol {
+		case "tcp":
+			run = func() error { return s.ServeTCP(l) }
+		case "tls", "dot":
+			run = func() error { return s.ServeTLS(l) }
+		case "http":
+			run = func() error { return s.ServeHTTP(l) }
+		case "https", "doh":
+			run = func() error { return s.ServeHTTPS(l) }
 		}
-		if err != nil {
-			return err
-		}
-		if cfg.ProxyProtocol {
-			l = &proxyproto.Listener{Listener: l, Policy: requirePP}
-		}
-		run = func() error { return s.ServeTLS(l) }
-	case "http":
-		var l net.Listener
-		var err error
-		if cfg.UnixDomainSocket {
-			if !abstract {
-				os.Remove(cfg.Addr)
-			}
-			l, err = config.Listen(context.Background(), "unix", cfg.Addr)
-			if !abstract {
-				os.Chmod(cfg.Addr, 0x777)
-			}
-		} else {
-			l, err = config.Listen(context.Background(), "tcp", cfg.Addr)
-		}
-		if err != nil {
-			return err
-		}
-		if cfg.ProxyProtocol {
-			l = &proxyproto.Listener{Listener: l, Policy: requirePP}
-		}
-		run = func() error { return s.ServeHTTP(l) }
-	case "https", "doh":
-		var l net.Listener
-		var err error
-		if cfg.UnixDomainSocket {
-			if !abstract {
-				os.Remove(cfg.Addr)
-			}
-			l, err = config.Listen(context.Background(), "unix", cfg.Addr)
-			if !abstract {
-				os.Chmod(cfg.Addr, 0x777)
-			}
-		} else {
-			l, err = config.Listen(context.Background(), "tcp", cfg.Addr)
-		}
-		if err != nil {
-			return err
-		}
-		if cfg.ProxyProtocol {
-			l = &proxyproto.Listener{Listener: l, Policy: requirePP}
-		}
-		run = func() error { return s.ServeHTTPS(l) }
 	default:
 		return fmt.Errorf("unknown protocol: [%s]", cfg.Protocol)
 	}
