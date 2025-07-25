@@ -31,8 +31,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lucas-clemente/quic-go"
 	"github.com/miekg/dns"
+	"github.com/quic-go/quic-go"
 	"go.uber.org/zap"
 	"golang.org/x/net/http2"
 
@@ -243,12 +243,12 @@ func NewUpstream(addr string, opt *Opt) (Upstream, error) {
 					InitialConnectionReceiveWindow: 8 * 1024,
 					MaxConnectionReceiveWindow:     64 * 1024,
 				},
-				DialFunc: func(ctx context.Context, _ string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlyConnection, error) {
-					ua, err := net.ResolveUDPAddr("udp", dialAddr) // TODO: Support bootstrap.
+				DialFunc: func(ctx context.Context, _ string, tlsCfg *tls.Config, cfg *quic.Config) (*quic.Conn, error) {
+					ua, err := net.ResolveUDPAddr("udp", dialAddr)
 					if err != nil {
 						return nil, err
 					}
-					return quic.DialEarlyContext(ctx, conn, ua, addrURL.Host, tlsCfg, cfg)
+					return quic.DialEarly(ctx, conn, ua, tlsCfg, cfg)
 				},
 			}
 		} else {

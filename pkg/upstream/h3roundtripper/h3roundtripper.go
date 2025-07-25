@@ -26,8 +26,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lucas-clemente/quic-go"
-	"github.com/lucas-clemente/quic-go/http3"
+	"github.com/quic-go/quic-go"
+	"github.com/quic-go/quic-go/http3"
 	"go.uber.org/zap"
 )
 
@@ -35,9 +35,7 @@ const (
 	retryThreshold = time.Millisecond * 50
 )
 
-var (
-	nopLogger = zap.NewNop()
-)
+var nopLogger = zap.NewNop()
 
 // H3RTHelper is a helper of original http3.RoundTripper.
 // This is a workaround of
@@ -46,10 +44,10 @@ type H3RTHelper struct {
 	Logger     *zap.Logger
 	TLSConfig  *tls.Config
 	QUICConfig *quic.Config
-	DialFunc   func(ctx context.Context, addr string, tlsCfg *tls.Config, cfg *quic.Config) (quic.EarlyConnection, error)
+	DialFunc   func(ctx context.Context, addr string, tlsCfg *tls.Config, cfg *quic.Config) (*quic.Conn, error)
 
 	m  sync.Mutex
-	rt *http3.RoundTripper
+	rt *http3.Transport
 }
 
 func (h *H3RTHelper) logger() *zap.Logger {
@@ -59,20 +57,20 @@ func (h *H3RTHelper) logger() *zap.Logger {
 	return h.Logger
 }
 
-func (h *H3RTHelper) getRT() *http3.RoundTripper {
+func (h *H3RTHelper) getRT() *http3.Transport {
 	h.m.Lock()
 	defer h.m.Unlock()
 	if h.rt == nil {
-		h.rt = &http3.RoundTripper{
+		h.rt = &http3.Transport{
 			Dial:            h.DialFunc,
 			TLSClientConfig: h.TLSConfig,
-			QuicConfig:      h.QUICConfig,
+			QUICConfig:      h.QUICConfig,
 		}
 	}
 	return h.rt
 }
 
-func (h *H3RTHelper) markAsDead(rt *http3.RoundTripper) {
+func (h *H3RTHelper) markAsDead(rt *http3.Transport) {
 	h.m.Lock()
 	defer h.m.Unlock()
 	if h.rt == rt {
