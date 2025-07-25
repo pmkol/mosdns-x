@@ -131,7 +131,7 @@ func (u *Upstream) exchange(ctx context.Context, url string) (*dns.Msg, error) {
 	}
 
 	req.Header["Accept"] = []string{"application/dns-message"}
-	req.Header["User-Agent"] = nil // Don't let go http send a default user agent header.
+	req.Header["User-Agent"] = []string{"mosdns-x"} // Don't let go http send a default user agent header.
 	resp, err := u.Client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("http request failed: %w", err)
