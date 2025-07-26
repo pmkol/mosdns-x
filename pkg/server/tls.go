@@ -129,8 +129,8 @@ func (s *Server) createETLSListner(l net.Listener, nextProtos []string) (net.Lis
 		return nil, err
 	}
 	return eTLS.NewListener(l, &eTLS.Config{
-		KernelTX:       true,
-		KernelRX:       false,
+		KernelTX:       s.opts.KernelTX,
+		KernelRX:       s.opts.KernelRX,
 		AllowEarlyData: true,
 		MaxEarlyData:   16384,
 		NextProtos:     nextProtos,
