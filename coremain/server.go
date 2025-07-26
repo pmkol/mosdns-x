@@ -108,6 +108,8 @@ func (m *Mosdns) startServerListener(cfg *ServerListenerConfig, dnsHandler dns_h
 		HttpHandler: httpHandler,
 		Cert:        cfg.Cert,
 		Key:         cfg.Key,
+		KernelTX:    cfg.KernelTX,
+		KernelRX:    cfg.KernelRX,
 		IdleTimeout: idleTimeout,
 		Logger:      m.logger,
 	}

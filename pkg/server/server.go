@@ -54,6 +54,13 @@ type ServerOpts struct {
 	// Only useful if there is no server certificate specified in TLSConfig.
 	Cert, Key string
 
+	// KernelTX and KernelRX control whether kernel TLS offloading is enabled
+	// If the kernel is not supported, it is automatically downgraded to the application implementation
+	//
+	// If this option is enabled, please mount the TLS module before you run application.
+	// On Linux, it will try to automatically mount the tls kernel module.
+	KernelRX, KernelTX bool
+
 	// IdleTimeout limits the maximum time period that a connection
 	// can idle. Default is defaultTCPIdleTimeout.
 	IdleTimeout time.Duration
