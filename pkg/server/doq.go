@@ -21,8 +21,6 @@ package server
 
 import (
 	"context"
-	"crypto/tls"
-	"errors"
 	"fmt"
 	"net"
 
@@ -55,26 +53,11 @@ func (c *quicCloser) close(code quic.ApplicationErrorCode) error {
 }
 
 func (s *Server) ServeQUIC(c net.PacketConn) error {
-	var tlsConf *tls.Config
-	if s.opts.TLSConfig != nil {
-		tlsConf = s.opts.TLSConfig.Clone()
-	} else {
-		tlsConf = new(tls.Config)
+	tlsConf, err := s.createTLSConfig([]string{"doq"})
+	if err != nil {
+		return nil
 	}
 
-	tlsConf.NextProtos = []string{"doq"}
-
-	if len(s.opts.Key)+len(s.opts.Cert) != 0 {
-		cert, err := tls.LoadX509KeyPair(s.opts.Cert, s.opts.Key)
-		if err != nil {
-			return err
-		}
-		tlsConf.Certificates = append(tlsConf.Certificates, cert)
-	}
-
-	if len(tlsConf.Certificates) == 0 {
-		return errors.New("missing certificate for tls listener")
-	}
 	l, err := quic.ListenEarly(c, tlsConf, &quic.Config{
 		Allow0RTT:                      true,
 		InitialStreamReceiveWindow:     1252,

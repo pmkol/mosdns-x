@@ -20,31 +20,13 @@
 package server
 
 import (
-	"crypto/tls"
-	"errors"
 	"net"
 )
 
 func (s *Server) ServeTLS(l net.Listener) error {
-	var tlsConf *tls.Config
-	if s.opts.TLSConfig != nil {
-		tlsConf = s.opts.TLSConfig.Clone()
-	} else {
-		tlsConf = new(tls.Config)
+	l, err := s.createTLSListner(l, []string{"dot"})
+	if err != nil {
+		return err
 	}
-
-	if len(s.opts.Key)+len(s.opts.Cert) != 0 {
-		cert, err := tls.LoadX509KeyPair(s.opts.Cert, s.opts.Key)
-		if err != nil {
-			return err
-		}
-		tlsConf.Certificates = append(tlsConf.Certificates, cert)
-	}
-
-	if len(tlsConf.Certificates) == 0 {
-		return errors.New("missing certificate for tls listener")
-	}
-
-	l = tls.NewListener(l, tlsConf)
 	return s.ServeTCP(l)
 }
