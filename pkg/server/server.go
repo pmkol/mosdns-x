@@ -20,7 +20,6 @@
 package server
 
 import (
-	"crypto/tls"
 	"errors"
 	"io"
 	"net/http"
@@ -50,11 +49,6 @@ type ServerOpts struct {
 
 	// HttpHandler is the http handler required by HTTP, DoH server.
 	HttpHandler http.Handler
-
-	// TLSConfig is required by DoT, DoH server.
-	// It must contain at least one certificate. If not, caller should use
-	// Cert, Key to load a certificate from disk.
-	TLSConfig *tls.Config
 
 	// Certificate files to start DoT, DoH server.
 	// Only useful if there is no server certificate specified in TLSConfig.
