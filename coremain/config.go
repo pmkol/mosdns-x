@@ -68,8 +68,12 @@ type ServerListenerConfig struct {
 	Protocol string `yaml:"protocol"`
 
 	// Addr: server "host:port" addr.
+	// When uds enabled must be "path"
 	// Addr cannot be empty.
 	Addr string `yaml:"addr"`
+
+	// UnixDomainSocket: server addr is uds.
+	UnixDomainSocket bool `yaml:"uds"`
 
 	Cert                string `yaml:"cert"`                    // certificate path, used by dot, doh, doq
 	Key                 string `yaml:"key"`                     // certificate key path, used by dot, doh, doq
