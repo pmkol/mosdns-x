@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/fsnotify/fsnotify"
+	"github.com/quic-go/quic-go"
 	eTLS "gitlab.com/go-extension/tls"
 )
 
@@ -84,40 +85,58 @@ func tryCreateWatchCert[T tls.Certificate | eTLS.Certificate](certFile string, k
 	return cc, nil
 }
 
-func (s *Server) createTLSListner(l net.Listener, nextProtos []string) (net.Listener, error) {
-	tlsConf := &tls.Config{
-		NextProtos: nextProtos,
-	}
-	if len(s.opts.Key)+len(s.opts.Cert) != 0 {
-		c, err := tryCreateWatchCert(s.opts.Cert, s.opts.Key, tls.LoadX509KeyPair)
-		if err != nil {
-			return nil, err
-		}
-		tlsConf.GetCertificate = func(chi *tls.ClientHelloInfo) (*tls.Certificate, error) {
-			return c.c, nil
-		}
-	} else {
+func (s *Server) createQUICListner(conn net.PacketConn, nextProtos []string) (*quic.EarlyListener, error) {
+	if s.opts.Cert == "" || s.opts.Key == "" {
 		return nil, errors.New("missing certificate for tls listener")
 	}
-	return tls.NewListener(l, tlsConf), nil
+	c, err := tryCreateWatchCert(s.opts.Cert, s.opts.Key, tls.LoadX509KeyPair)
+	if err != nil {
+		return nil, err
+	}
+	return quic.ListenEarly(conn, &tls.Config{
+		NextProtos: nextProtos,
+		GetCertificate: func(chi *tls.ClientHelloInfo) (*tls.Certificate, error) {
+			return c.c, nil
+		},
+	}, &quic.Config{
+		Allow0RTT:                      true,
+		InitialStreamReceiveWindow:     1252,
+		MaxStreamReceiveWindow:         4 * 1024,
+		InitialConnectionReceiveWindow: 8 * 1024,
+		MaxConnectionReceiveWindow:     16 * 1024,
+	})
+}
+
+func (s *Server) createTLSListner(l net.Listener, nextProtos []string) (net.Listener, error) {
+	if s.opts.Cert == "" || s.opts.Key == "" {
+		return nil, errors.New("missing certificate for tls listener")
+	}
+	c, err := tryCreateWatchCert(s.opts.Cert, s.opts.Key, tls.LoadX509KeyPair)
+	if err != nil {
+		return nil, err
+	}
+	return tls.NewListener(l, &tls.Config{
+		NextProtos: nextProtos,
+		GetCertificate: func(_ *tls.ClientHelloInfo) (*tls.Certificate, error) {
+			return c.c, nil
+		},
+	}), nil
 }
 
 func (s *Server) createETLSListner(l net.Listener, nextProtos []string) (net.Listener, error) {
-	tlsConf := &eTLS.Config{
+	if s.opts.Cert == "" || s.opts.Key == "" {
+		return nil, errors.New("missing certificate for tls listener")
+	}
+	c, err := tryCreateWatchCert(s.opts.Cert, s.opts.Key, eTLS.LoadX509KeyPair)
+	if err != nil {
+		return nil, err
+	}
+	return eTLS.NewListener(l, &eTLS.Config{
 		KernelTX:   true,
 		KernelRX:   false,
 		NextProtos: nextProtos,
-	}
-	if len(s.opts.Key)+len(s.opts.Cert) != 0 {
-		c, err := tryCreateWatchCert(s.opts.Cert, s.opts.Key, eTLS.LoadX509KeyPair)
-		if err != nil {
-			return nil, err
-		}
-		tlsConf.GetCertificate = func(chi *eTLS.ClientHelloInfo) (*eTLS.Certificate, error) {
+		GetCertificate: func(_ *eTLS.ClientHelloInfo) (*eTLS.Certificate, error) {
 			return c.c, nil
-		}
-	} else {
-		return nil, errors.New("missing certificate for tls listener")
-	}
-	return eTLS.NewListener(l, tlsConf), nil
+		},
+	}), nil
 }
