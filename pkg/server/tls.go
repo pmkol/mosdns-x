@@ -26,121 +26,114 @@ import (
 	"time"
 
 	"github.com/fsnotify/fsnotify"
+	"github.com/quic-go/quic-go"
 	eTLS "gitlab.com/go-extension/tls"
 )
 
-func watchCert[T tls.Certificate | eTLS.Certificate](c *T, cert string, key string, createFunc func(string, string) (T, error)) {
-	watcher, err := fsnotify.NewWatcher()
+func createDynamicCertificate[T tls.Certificate | eTLS.Certificate](certFile string, keyFile string, loader func(certFile string, keyFile string) (T, error)) (*T, error) {
+	cert, err := loader(certFile, keyFile)
 	if err != nil {
-		return
+		return nil, err
 	}
-	watcher.Add(cert)
-	watcher.Add(key)
+	c := &cert
+	go func() {
+		watcher, err := fsnotify.NewWatcher()
+		if err != nil {
+			return
+		}
+		watcher.Add(certFile)
+		watcher.Add(keyFile)
 
-	var timer *time.Timer
-	for {
-		select {
-		case e, ok := <-watcher.Events:
-			if !ok {
-				if timer != nil {
-					timer.Stop()
-					timer = nil
-				}
-				return
-			}
-			if e.Has(fsnotify.Chmod) || e.Has(fsnotify.Remove) {
-				continue
-			}
-			if timer == nil {
-				timer = time.AfterFunc(time.Second, func() {
-					timer = nil
-					if cert, err := createFunc(cert, key); err == nil {
-						c = &cert
+		var timer *time.Timer
+		for {
+			select {
+			case e, ok := <-watcher.Events:
+				if !ok {
+					if timer != nil {
+						timer.Stop()
+						timer = nil
 					}
-				})
-			} else {
-				timer.Reset(time.Second)
-			}
-		case err := <-watcher.Errors:
-			if err != nil {
-				if timer != nil {
-					timer.Stop()
-					timer = nil
+					return
 				}
-				return
+				if e.Has(fsnotify.Chmod) || e.Has(fsnotify.Remove) {
+					continue
+				}
+				if timer == nil {
+					timer = time.AfterFunc(time.Second, func() {
+						timer = nil
+						if cert, err := loader(certFile, keyFile); err == nil {
+							c = &cert
+						}
+					})
+				} else {
+					timer.Reset(time.Second)
+				}
+			case err := <-watcher.Errors:
+				if err != nil {
+					if timer != nil {
+						timer.Stop()
+						timer = nil
+					}
+					return
+				}
 			}
 		}
-	}
+	}()
+	return c, nil
 }
 
-func (s *Server) createTLSConfig(nextProtos []string) (*tls.Config, error) {
-	var tlsConf *tls.Config
-	if s.opts.TLSConfig != nil {
-		tlsConf = s.opts.TLSConfig.Clone()
-	} else {
-		tlsConf = new(tls.Config)
-	}
-
-	tlsConf.NextProtos = nextProtos
-
-	if len(s.opts.Key)+len(s.opts.Cert) != 0 {
-		var c *tls.Certificate
-		cert, err := tls.LoadX509KeyPair(s.opts.Cert, s.opts.Key)
-		if err != nil {
-			return nil, err
-		}
-		c = &cert
-		tlsConf.GetCertificate = func(chi *tls.ClientHelloInfo) (*tls.Certificate, error) {
-			return c, nil
-		}
-		go watchCert(c, s.opts.Cert, s.opts.Key, tls.LoadX509KeyPair)
-	} else if len(tlsConf.Certificates) == 0 {
+func (s *Server) createQUICListner(conn net.PacketConn, nextProtos []string) (*quic.EarlyListener, error) {
+	if s.opts.Cert == "" || s.opts.Key == "" {
 		return nil, errors.New("missing certificate for tls listener")
 	}
-
-	return tlsConf, nil
+	cert, err := createDynamicCertificate(s.opts.Cert, s.opts.Key, tls.LoadX509KeyPair)
+	if err != nil {
+		return nil, err
+	}
+	return quic.ListenEarly(conn, &tls.Config{
+		NextProtos: nextProtos,
+		GetCertificate: func(chi *tls.ClientHelloInfo) (*tls.Certificate, error) {
+			return cert, nil
+		},
+	}, &quic.Config{
+		Allow0RTT:                      true,
+		InitialStreamReceiveWindow:     1252,
+		MaxStreamReceiveWindow:         4 * 1024,
+		InitialConnectionReceiveWindow: 8 * 1024,
+		MaxConnectionReceiveWindow:     64 * 1024,
+	})
 }
 
 func (s *Server) createTLSListner(l net.Listener, nextProtos []string) (net.Listener, error) {
-	tlsConf := &tls.Config{
-		NextProtos: nextProtos,
-	}
-	if len(s.opts.Key)+len(s.opts.Cert) != 0 {
-		var c *tls.Certificate
-		cert, err := tls.LoadX509KeyPair(s.opts.Cert, s.opts.Key)
-		if err != nil {
-			return nil, err
-		}
-		c = &cert
-		tlsConf.GetCertificate = func(chi *tls.ClientHelloInfo) (*tls.Certificate, error) {
-			return c, nil
-		}
-		go watchCert(c, s.opts.Cert, s.opts.Key, tls.LoadX509KeyPair)
-	} else {
+	if s.opts.Cert == "" || s.opts.Key == "" {
 		return nil, errors.New("missing certificate for tls listener")
 	}
-	return tls.NewListener(l, tlsConf), nil
+	cert, err := createDynamicCertificate(s.opts.Cert, s.opts.Key, tls.LoadX509KeyPair)
+	if err != nil {
+		return nil, err
+	}
+	return tls.NewListener(l, &tls.Config{
+		NextProtos: nextProtos,
+		GetCertificate: func(chi *tls.ClientHelloInfo) (*tls.Certificate, error) {
+			return cert, nil
+		},
+	}), nil
 }
 
 func (s *Server) createETLSListner(l net.Listener, nextProtos []string) (net.Listener, error) {
-	tlsConf := &eTLS.Config{
+	if s.opts.Cert == "" || s.opts.Key == "" {
+		return nil, errors.New("missing certificate for tls listener")
+	}
+	cert, err := createDynamicCertificate(s.opts.Cert, s.opts.Key, eTLS.LoadX509KeyPair)
+	if err != nil {
+		return nil, err
+	}
+	return eTLS.NewListener(l, &eTLS.Config{
 		KernelTX:   true,
 		KernelRX:   false,
 		NextProtos: nextProtos,
-	}
-	if len(s.opts.Key)+len(s.opts.Cert) != 0 {
-		var c *eTLS.Certificate
-		cert, err := eTLS.LoadX509KeyPair(s.opts.Cert, s.opts.Key)
-		if err != nil {
-			return nil, err
-		}
-		c = &cert
-		tlsConf.GetCertificate = func(chi *eTLS.ClientHelloInfo) (*eTLS.Certificate, error) {
-			return c, nil
-		}
-		go watchCert(c, s.opts.Cert, s.opts.Key, eTLS.LoadX509KeyPair)
-	} else {
-		return nil, errors.New("missing certificate for tls listener")
-	}
-	return eTLS.NewListener(l, tlsConf), nil
+		GetCertificate: func(chi *eTLS.ClientHelloInfo) (*eTLS.Certificate, error) {
+			return cert, nil
+		},
+	}), nil
 }
