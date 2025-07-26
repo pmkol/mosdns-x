@@ -63,10 +63,12 @@ func (s *Server) serveHTTP(l net.Listener, https bool) error {
 
 	var err error
 	if https {
-		err = hs.ServeTLS(l, s.opts.Cert, s.opts.Key)
-	} else {
-		err = hs.Serve(l)
+		l, err = s.createTLSListner(l, []string{"h2"})
+		if err != nil {
+			return err
+		}
 	}
+	err = hs.Serve(l)
 	if err == http.ErrServerClosed { // Replace http.ErrServerClosed with our ErrServerClosed
 		return ErrServerClosed
 	}
