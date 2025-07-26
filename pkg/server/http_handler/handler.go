@@ -26,6 +26,7 @@ import (
 	"io"
 	"net/http"
 	"net/netip"
+	"reflect"
 	"strings"
 
 	"github.com/miekg/dns"
@@ -48,7 +49,7 @@ type HandlerOpts struct {
 	Path string
 
 	// SrcIPHeader specifies the header that contain client source address.
-	// e.g. "X-Forwarded-For".
+	// "True-Client-IP" "X-Real-IP" "X-Forwarded-For" will parse automatically.
 	SrcIPHeader string
 
 	// Logger specifies the logger which Handler writes its log to.
@@ -82,82 +83,67 @@ func (h *Handler) warnErr(req *http.Request, msg string, err error) {
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	addrPort, err := netip.ParseAddrPort(req.RemoteAddr)
-	if err != nil {
-		w.Write([]byte(fmt.Errorf("failed to parse request remote addr: %s", err).Error()))
-		w.WriteHeader(http.StatusInternalServerError)
-		h.opts.Logger.Error("failed to parse request remote addr", zap.String("addr", req.RemoteAddr), zap.Error(err))
-		return
-	}
-	clientAddr := addrPort.Addr()
-
-	// read remote addr from header
-	if header := h.opts.SrcIPHeader; len(header) != 0 {
-		if xff := req.Header.Get(header); len(xff) != 0 {
-			addr, err := readClientAddrFromXFF(xff)
-			if err != nil {
-				w.Write([]byte("invalid client address"))
-				w.WriteHeader(http.StatusBadRequest)
-				h.warnErr(req, "failed to get client ip from header", err)
-				return
-			}
-			clientAddr = addr
-		}
+	// get remote addr from header and request
+	var meta query_context.RequestMeta
+	if addr, err := getRemoteAddr(req, h.opts.SrcIPHeader); err == nil {
+		meta.ClientAddr = addr
+		req.RemoteAddr = addr.String()
 	}
 
 	// check url path
 	if len(h.opts.Path) != 0 && req.URL.Path != h.opts.Path {
-		w.Write([]byte("invalid request path"))
 		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte("invalid request path"))
 		h.warnErr(req, "invalid request", fmt.Errorf("invalid request path %s", req.URL.Path))
 		return
 	}
 
 	// check accept header
 	if accept := req.Header.Get("Accept"); accept != "application/dns-message" {
-		w.Write([]byte("invalid Accept header"))
 		w.WriteHeader(http.StatusPreconditionFailed)
+		w.Write([]byte("invalid Accept header"))
 		h.warnErr(req, "invalid Accept header", fmt.Errorf("invalid Accept header %s", accept))
 		return
 	}
 
 	var b []byte
+	var err error
 
 	switch req.Method {
 	case http.MethodGet:
 		s := req.URL.Query().Get("dns")
 		if len(s) == 0 {
-			w.Write([]byte("no dns param"))
 			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("no dns param"))
 			h.warnErr(req, "no dns param", errors.New("no dns param"))
 			return
 		}
 
 		b, err = base64.RawURLEncoding.DecodeString(s)
 		if err != nil {
-			w.Write([]byte("invalid dns param"))
 			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("invalid dns param"))
 			h.warnErr(req, "decode base64 query failed", fmt.Errorf(" base64 query failed: %s", err))
 			return
 		}
 	case http.MethodPost:
 		if contentType := req.Header.Get("Content-Type"); contentType != "application/dns-message" {
-			w.Write([]byte("invalid Content-Type"))
 			w.WriteHeader(http.StatusUnsupportedMediaType)
+			w.Write([]byte("invalid Content-Type"))
 			h.warnErr(req, "invalid Content-Type", fmt.Errorf("invalid Content-Type %s", contentType))
 			return
 		}
 
 		b, err = io.ReadAll(req.Body)
 		if err != nil {
-			w.Write([]byte("invalid request body"))
 			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("invalid request body"))
 			h.warnErr(req, "read request body failed", err)
 			return
 		}
 	default:
-		w.Write([]byte("invalid request method"))
 		w.WriteHeader(http.StatusMethodNotAllowed)
+		w.Write([]byte("invalid request method"))
 		h.warnErr(req, "invalid method", fmt.Errorf("invalid method %s", req.Method))
 		return
 	}
@@ -165,24 +151,24 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	// read msg
 	m := new(dns.Msg)
 	if err := m.Unpack(b); err != nil {
-		w.Write([]byte("invalid request message"))
 		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("invalid request message"))
 		h.warnErr(req, "unpack request failed", err)
 		return
 	}
 
-	r, err := h.opts.DNSHandler.ServeDNS(req.Context(), m, &query_context.RequestMeta{ClientAddr: clientAddr})
+	r, err := h.opts.DNSHandler.ServeDNS(req.Context(), m, &meta)
 	if err != nil {
-		w.Write([]byte("unpack response failed"))
 		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("unpack response failed"))
 		h.warnErr(req, "unpack response failed", err)
 		return
 	}
 
 	b, buf, err := pool.PackBuffer(r)
 	if err != nil {
-		w.Write([]byte("pack response failed"))
 		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("pack response failed"))
 		h.warnErr(req, "pack response failed", err)
 		return
 	}
@@ -190,15 +176,44 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	w.Header().Set("Content-Type", "application/dns-message")
 	w.Header().Set("Cache-Control", fmt.Sprintf("max-age=%d", dnsutils.GetMinimalTTL(r)))
+	w.WriteHeader(http.StatusOK)
 	if _, err := w.Write(b); err != nil {
 		h.warnErr(req, "write response failed", err)
-		return
 	}
 }
 
-func readClientAddrFromXFF(s string) (netip.Addr, error) {
-	if i := strings.IndexRune(s, ','); i > 0 {
-		return netip.ParseAddr(s[:i])
+func getRemoteAddr(req *http.Request, customHeader string) (netip.Addr, error) {
+	if tcip := req.Header.Get("True-Client-IP"); tcip != "" {
+		if addr, err := netip.ParseAddr(tcip); err == nil {
+			return addr, nil
+		}
 	}
-	return netip.ParseAddr(s)
+	if xrip := req.Header.Get("X-Real-IP"); xrip != "" {
+		if addr, err := netip.ParseAddr(xrip); err == nil {
+			return addr, nil
+		}
+	}
+	if xff := req.Header.Get("X-Forwarded-For"); xff != "" {
+		ip, _, _ := strings.Cut(xff, ",")
+		if addr, err := netip.ParseAddr(ip); err == nil {
+			return addr, nil
+		}
+	}
+	if customHeader != "" && !contain([]string{"True-Client-IP", "X-Real-IP", "X-Forwarded-For"}, customHeader) {
+		if ip := req.Header.Get(customHeader); ip != "" {
+			if addr, err := netip.ParseAddr(ip); err == nil {
+				return addr, nil
+			}
+		}
+	}
+	return netip.ParseAddr(req.RemoteAddr)
+}
+
+func contain[T any](arr []T, it T) bool {
+	for _, item := range arr {
+		if reflect.DeepEqual(it, item) {
+			return true
+		}
+	}
+	return false
 }
