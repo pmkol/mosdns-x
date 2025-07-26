@@ -50,7 +50,6 @@ func (s *Server) serveHTTP(l net.Listener, https bool) error {
 		WriteTimeout:      time.Second * 5,
 		IdleTimeout:       s.opts.IdleTimeout,
 		MaxHeaderBytes:    2048,
-		TLSConfig:         s.opts.TLSConfig.Clone(),
 	}
 	if ok := s.trackCloser(hs, true); !ok {
 		return ErrServerClosed
