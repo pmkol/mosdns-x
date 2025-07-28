@@ -39,6 +39,7 @@ import (
 	_ "github.com/pmkol/mosdns-x/plugin/executable/padding"
 	_ "github.com/pmkol/mosdns-x/plugin/executable/query_summary"
 	_ "github.com/pmkol/mosdns-x/plugin/executable/redirect"
+	_ "github.com/pmkol/mosdns-x/plugin/executable/reject_any"
 	_ "github.com/pmkol/mosdns-x/plugin/executable/reverse_lookup"
 	_ "github.com/pmkol/mosdns-x/plugin/executable/sequence"
 	_ "github.com/pmkol/mosdns-x/plugin/executable/sleep"
