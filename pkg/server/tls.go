@@ -23,7 +23,54 @@ import (
 	"crypto/tls"
 	"errors"
 	"net"
+	"time"
+
+	"github.com/fsnotify/fsnotify"
 )
+
+func watchCert(c *tls.Certificate, cert string, key string) {
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		return
+	}
+	watcher.Add(cert)
+	watcher.Add(key)
+
+	var timer *time.Timer
+	for {
+		select {
+		case e, ok := <-watcher.Events:
+			if !ok {
+				if timer != nil {
+					timer.Stop()
+					timer = nil
+				}
+				return
+			}
+			if e.Has(fsnotify.Chmod) || e.Has(fsnotify.Remove) {
+				continue
+			}
+			if timer == nil {
+				timer = time.AfterFunc(time.Second, func() {
+					timer = nil
+					if cert, err := tls.LoadX509KeyPair(cert, key); err == nil {
+						c = &cert
+					}
+				})
+			} else {
+				timer.Reset(time.Second)
+			}
+		case err := <-watcher.Errors:
+			if err != nil {
+				if timer != nil {
+					timer.Stop()
+					timer = nil
+				}
+				return
+			}
+		}
+	}
+}
 
 func (s *Server) createTLSConfig(nextProtos []string) (*tls.Config, error) {
 	var tlsConf *tls.Config
@@ -36,14 +83,17 @@ func (s *Server) createTLSConfig(nextProtos []string) (*tls.Config, error) {
 	tlsConf.NextProtos = nextProtos
 
 	if len(s.opts.Key)+len(s.opts.Cert) != 0 {
+		var c *tls.Certificate
 		cert, err := tls.LoadX509KeyPair(s.opts.Cert, s.opts.Key)
 		if err != nil {
 			return nil, err
 		}
-		tlsConf.Certificates = append(tlsConf.Certificates, cert)
-	}
-
-	if len(tlsConf.Certificates) == 0 {
+		c = &cert
+		tlsConf.GetCertificate = func(chi *tls.ClientHelloInfo) (*tls.Certificate, error) {
+			return c, nil
+		}
+		go watchCert(c, s.opts.Cert, s.opts.Key)
+	} else if len(tlsConf.Certificates) == 0 {
 		return nil, errors.New("missing certificate for tls listener")
 	}
 
