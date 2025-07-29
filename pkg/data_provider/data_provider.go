@@ -179,6 +179,10 @@ func (ds *DataProvider) startFsWatcher() error {
 			select {
 			case e, ok := <-w.Events:
 				if !ok {
+					if delayReloadTimer != nil {
+						delayReloadTimer.Stop()
+						delayReloadTimer = nil
+					}
 					return
 				}
 				ds.logger.Info(
@@ -188,45 +192,56 @@ func (ds *DataProvider) startFsWatcher() error {
 				)
 
 				if delayReloadTimer != nil {
-					delayReloadTimer.Stop()
-				}
-				delayReloadTimer = time.AfterFunc(time.Second, func() {
-					if hasOp(e, fsnotify.Remove) {
-						_ = w.Remove(ds.file)
-						if err := w.Add(ds.file); err != nil {
+					delayReloadTimer.Reset(time.Second)
+				} else {
+					delayReloadTimer = time.AfterFunc(time.Second, func() {
+						if hasOp(e, fsnotify.Remove) {
+							_ = w.Remove(ds.file)
+							if err := w.Add(ds.file); err != nil {
+								ds.logger.Error(
+									"failed to re-watch file, auto reload may not work anymore",
+									zap.String("file", ds.file),
+									zap.Error(err),
+								)
+							}
+						}
+
+						ds.logger.Info(
+							"reloading file",
+							zap.String("file", ds.file),
+						)
+						if v, err := ds.loadFromDisk(); err != nil {
 							ds.logger.Error(
-								"failed to re-watch file, auto reload may not work anymore",
+								"failed to reload file",
 								zap.String("file", ds.file),
 								zap.Error(err),
 							)
+						} else {
+							ds.logger.Info(
+								"file reloaded",
+								zap.String("file", ds.file),
+							)
+							ds.pushData(v)
 						}
-					}
 
-					ds.logger.Info(
-						"reloading file",
-						zap.String("file", ds.file),
-					)
-					if v, err := ds.loadFromDisk(); err != nil {
-						ds.logger.Error(
-							"failed to reload file",
-							zap.String("file", ds.file),
-							zap.Error(err),
-						)
-					} else {
-						ds.logger.Info(
-							"file reloaded",
-							zap.String("file", ds.file),
-						)
-						ds.pushData(v)
-					}
-				})
+						delayReloadTimer = nil
+					})
+				}
 
 			case err, ok := <-w.Errors:
+				if delayReloadTimer != nil {
+					delayReloadTimer.Stop()
+					delayReloadTimer = nil
+				}
 				if !ok {
 					return
 				}
 				ds.logger.Error("fs notify error", zap.Error(err))
 			case <-ds.sc.ReceiveCloseSignal():
+				if delayReloadTimer != nil {
+					delayReloadTimer.Stop()
+					delayReloadTimer = nil
+				}
 				return
 			}
 		}
