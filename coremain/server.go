@@ -146,7 +146,11 @@ func (m *Mosdns) startServerListener(cfg *ServerListenerConfig, dnsHandler dns_h
 		case "", "udp":
 			run = func() error { return s.ServeUDP(conn) }
 		case "quic", "doq":
-			run = func() error { return s.ServeQUIC(conn) }
+			l, err := s.CreateQUICListner(conn, []string{"doq"})
+			if err != nil {
+				return err
+			}
+			run = func() error { return s.ServeQUIC(l) }
 		}
 	case "tcp", "tls", "dot", "http", "https", "doh":
 		var l net.Listener
@@ -172,11 +176,19 @@ func (m *Mosdns) startServerListener(cfg *ServerListenerConfig, dnsHandler dns_h
 		case "tcp":
 			run = func() error { return s.ServeTCP(l) }
 		case "tls", "dot":
-			run = func() error { return s.ServeTLS(l) }
+			l, err = s.CreateETLSListner(l, []string{"dot"})
+			if err != nil {
+				return err
+			}
+			run = func() error { return s.ServeTCP(l) }
 		case "http":
 			run = func() error { return s.ServeHTTP(l) }
 		case "https", "doh":
-			run = func() error { return s.ServeHTTPS(l) }
+			l, err = s.CreateTLSListner(l, []string{"h2"})
+			if err != nil {
+				return err
+			}
+			run = func() error { return s.ServeHTTP(l) }
 		}
 	default:
 		return fmt.Errorf("unknown protocol: [%s]", cfg.Protocol)
