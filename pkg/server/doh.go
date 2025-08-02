@@ -29,14 +29,6 @@ import (
 )
 
 func (s *Server) ServeHTTP(l net.Listener) error {
-	return s.serveHTTP(l, false)
-}
-
-func (s *Server) ServeHTTPS(l net.Listener) error {
-	return s.serveHTTP(l, true)
-}
-
-func (s *Server) serveHTTP(l net.Listener, https bool) error {
 	defer l.Close()
 
 	if s.opts.HttpHandler == nil {
@@ -56,20 +48,16 @@ func (s *Server) serveHTTP(l net.Listener, https bool) error {
 	}
 	defer s.trackCloser(hs, false)
 
-	if err := http2.ConfigureServer(hs, &http2.Server{IdleTimeout: s.opts.IdleTimeout}); err != nil {
+	err := http2.ConfigureServer(hs, &http2.Server{IdleTimeout: s.opts.IdleTimeout})
+	if err != nil {
 		s.opts.Logger.Error("failed to set up http2 support", zap.Error(err))
 	}
 
-	var err error
-	if https {
-		l, err = s.createTLSListner(l, []string{"h2"})
-		if err != nil {
-			return err
-		}
-	}
 	err = hs.Serve(l)
 	if err == http.ErrServerClosed { // Replace http.ErrServerClosed with our ErrServerClosed
 		return ErrServerClosed
+	} else if err != nil {
+		return err
 	}
-	return err
+	return nil
 }
