@@ -64,14 +64,15 @@ type ServerListenerConfig struct {
 	// "dot", "tls" -> dns over tls
 	// "doh", "https" -> dns over https (rfc 8844)
 	// "http" -> dns over https (rfc 8844) but without tls
+	// "doq", "quic" -> dns over quic (rfc 9250)
 	Protocol string `yaml:"protocol"`
 
 	// Addr: server "host:port" addr.
 	// Addr cannot be empty.
 	Addr string `yaml:"addr"`
 
-	Cert                string `yaml:"cert"`                    // certificate path, used by dot, doh
-	Key                 string `yaml:"key"`                     // certificate key path, used by dot, doh
+	Cert                string `yaml:"cert"`                    // certificate path, used by dot, doh, doq
+	Key                 string `yaml:"key"`                     // certificate key path, used by dot, doh, doq
 	URLPath             string `yaml:"url_path"`                // used by doh, http. If it's empty, any path will be handled.
 	GetUserIPFromHeader string `yaml:"get_user_ip_from_header"` // used by doh, http.
 	ProxyProtocol       bool   `yaml:"proxy_protocol"`          // accepting the PROXYProtocol
