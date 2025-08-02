@@ -40,6 +40,7 @@ import (
 	"github.com/pmkol/mosdns-x/pkg/upstream/bootstrap"
 	"github.com/pmkol/mosdns-x/pkg/upstream/doh"
 	"github.com/pmkol/mosdns-x/pkg/upstream/h3roundtripper"
+	mQUIC "github.com/pmkol/mosdns-x/pkg/upstream/quic"
 	"github.com/pmkol/mosdns-x/pkg/upstream/transport"
 )
 
@@ -213,6 +214,28 @@ func NewUpstream(addr string, opt *Opt) (Upstream, error) {
 			MaxConns:       opt.MaxConns,
 		}
 		return transport.NewTransport(to)
+	case "doq", "quic":
+		var tlsConfig *tls.Config
+		if opt.TLSConfig != nil {
+			tlsConfig = opt.TLSConfig.Clone()
+		} else {
+			tlsConfig = new(tls.Config)
+		}
+		if len(tlsConfig.ServerName) == 0 {
+			tlsConfig.ServerName = tryRemovePort(addrURL.Host)
+		}
+
+		tlsConfig.NextProtos = []string{"doq"}
+
+		dialAddr := getDialAddrWithPort(addrURL.Host, opt.DialAddr, 853)
+		return mQUIC.NewQUICUpstream(dialAddr, tlsConfig, &quic.Config{
+			TokenStore:                     quic.NewLRUTokenStore(1, 10),
+			InitialStreamReceiveWindow:     4 * 1024,
+			MaxStreamReceiveWindow:         4 * 1024,
+			InitialConnectionReceiveWindow: 8 * 1024,
+			MaxConnectionReceiveWindow:     64 * 1024,
+			KeepAlivePeriod:                time.Second * 20,
+		}), nil
 	case "https":
 		idleConnTimeout := time.Second * 30
 		if opt.IdleTimeout > 0 {
