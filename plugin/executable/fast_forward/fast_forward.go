@@ -74,6 +74,8 @@ type UpstreamConfig struct {
 	EnableHTTP3        bool   `yaml:"enable_http3"`
 	Bootstrap          string `yaml:"bootstrap"`
 	InsecureSkipVerify bool   `yaml:"insecure_skip_verify"`
+	KernelTX           bool   `yaml:"kernel_tx"` // use kernel tls to send data
+	KernelRX           bool   `yaml:"kernel_rx"` // use kernel tls to receive data
 }
 
 func Init(bp *coremain.BP, args interface{}) (p coremain.Plugin, err error) {
@@ -129,7 +131,9 @@ func newFastForward(bp *coremain.BP, args *Args) (*fastForward, error) {
 				RootCAs:            rootCAs,
 				ClientSessionCache: tls.NewLRUClientSessionCache(64),
 			},
-			Logger: bp.L(),
+			KernelTX: c.KernelTX,
+			KernelRX: c.KernelRX,
+			Logger:   bp.L(),
 		}
 
 		u, err := upstream.NewUpstream(c.Addr, opt)
