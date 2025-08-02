@@ -24,7 +24,7 @@ import (
 )
 
 func (s *Server) ServeTLS(l net.Listener) error {
-	l, err := s.createTLSListner(l, []string{"dot"})
+	l, err := s.createETLSListner(l, []string{"dot"})
 	if err != nil {
 		return err
 	}
