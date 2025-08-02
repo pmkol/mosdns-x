@@ -23,9 +23,6 @@ import (
 	"net"
 	"net/http"
 	"time"
-
-	"go.uber.org/zap"
-	"golang.org/x/net/http2"
 )
 
 func (s *Server) ServeHTTP(l net.Listener) error {
@@ -48,12 +45,7 @@ func (s *Server) ServeHTTP(l net.Listener) error {
 	}
 	defer s.trackCloser(hs, false)
 
-	err := http2.ConfigureServer(hs, &http2.Server{IdleTimeout: s.opts.IdleTimeout})
-	if err != nil {
-		s.opts.Logger.Error("failed to set up http2 support", zap.Error(err))
-	}
-
-	err = hs.Serve(l)
+	err := hs.Serve(l)
 	if err == http.ErrServerClosed { // Replace http.ErrServerClosed with our ErrServerClosed
 		return ErrServerClosed
 	} else if err != nil {
