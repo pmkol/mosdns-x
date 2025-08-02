@@ -65,6 +65,7 @@ type ServerListenerConfig struct {
 	// "doh", "https" -> dns over https (rfc 8844)
 	// "http" -> dns over https (rfc 8844) but without tls
 	// "doq", "quic" -> dns over quic (rfc 9250)
+	// "doh3", "h3" -> dns over http3 (rfc 9114 && rfc 8844)
 	Protocol string `yaml:"protocol"`
 
 	// Addr: server "host:port" addr.
