@@ -82,7 +82,7 @@ func createDynamicCertificate[T tls.Certificate | eTLS.Certificate](certFile str
 	return c, nil
 }
 
-func (s *Server) createQUICListner(conn net.PacketConn, nextProtos []string) (*quic.EarlyListener, error) {
+func (s *Server) CreateQUICListner(conn net.PacketConn, nextProtos []string) (*quic.EarlyListener, error) {
 	if s.opts.Cert == "" || s.opts.Key == "" {
 		return nil, errors.New("missing certificate for tls listener")
 	}
@@ -104,7 +104,7 @@ func (s *Server) createQUICListner(conn net.PacketConn, nextProtos []string) (*q
 	})
 }
 
-func (s *Server) createTLSListner(l net.Listener, nextProtos []string) (net.Listener, error) {
+func (s *Server) CreateTLSListner(l net.Listener, nextProtos []string) (net.Listener, error) {
 	if s.opts.Cert == "" || s.opts.Key == "" {
 		return nil, errors.New("missing certificate for tls listener")
 	}
@@ -120,7 +120,7 @@ func (s *Server) createTLSListner(l net.Listener, nextProtos []string) (net.List
 	}), nil
 }
 
-func (s *Server) createETLSListner(l net.Listener, nextProtos []string) (net.Listener, error) {
+func (s *Server) CreateETLSListner(l net.Listener, nextProtos []string) (net.Listener, error) {
 	if s.opts.Cert == "" || s.opts.Key == "" {
 		return nil, errors.New("missing certificate for tls listener")
 	}
