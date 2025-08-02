@@ -185,7 +185,7 @@ func NewUpstream(addr string, opt *Opt) (Upstream, error) {
 			MaxConns:       opt.MaxConns,
 		}
 		return transport.NewTransport(to)
-	case "tls":
+	case "dot", "tls":
 		var tlsConfig *tls.Config
 		if opt.TLSConfig != nil {
 			tlsConfig = opt.TLSConfig.Clone()
