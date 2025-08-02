@@ -273,11 +273,12 @@ func NewUpstream(addr string, opt *Opt) (Upstream, error) {
 				Logger:    opt.Logger,
 				TLSConfig: opt.TLSConfig,
 				QUICConfig: &quic.Config{
-					TokenStore:                     quic.NewLRUTokenStore(4, 8),
+					TokenStore:                     quic.NewLRUTokenStore(1, 10),
 					InitialStreamReceiveWindow:     4 * 1024,
 					MaxStreamReceiveWindow:         4 * 1024,
 					InitialConnectionReceiveWindow: 8 * 1024,
 					MaxConnectionReceiveWindow:     64 * 1024,
+					KeepAlivePeriod:                time.Second * 20,
 				},
 				DialFunc: func(ctx context.Context, _ string, tlsCfg *tls.Config, cfg *quic.Config) (*quic.Conn, error) {
 					c, err := dialer.DialContext(ctx, "udp", dialAddr)
