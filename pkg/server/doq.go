@@ -22,7 +22,6 @@ package server
 import (
 	"context"
 	"fmt"
-	"net"
 
 	"github.com/quic-go/quic-go"
 	"go.uber.org/zap"
@@ -52,11 +51,7 @@ func (c *quicCloser) close(code quic.ApplicationErrorCode) error {
 	return c.conn.CloseWithError(code, "")
 }
 
-func (s *Server) ServeQUIC(conn net.PacketConn) error {
-	l, err := s.createQUICListner(conn, []string{"doq"})
-	if err != nil {
-		return err
-	}
+func (s *Server) ServeQUIC(l *quic.EarlyListener) error {
 	defer l.Close()
 
 	handler := s.opts.DNSHandler
