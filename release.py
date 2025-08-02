@@ -1,5 +1,6 @@
 # !/usr/bin/env python3
 import argparse
+import datetime
 import logging
 import os
 import subprocess
@@ -22,6 +23,7 @@ envs = [
     [['GOOS', 'darwin'], ['GOARCH', 'arm64']],
     # [['GOOS', 'linux'], ['GOARCH', '386']],
     [['GOOS', 'linux'], ['GOARCH', 'amd64']],
+    [['GOOS', 'linux'], ['GOARCH', 'amd64'], ['GOAMD64', 'v3']],
 
     [['GOOS', 'linux'], ['GOARCH', 'arm'], ['GOARM', '5']],
     [['GOOS', 'linux'], ['GOARCH', 'arm'], ['GOARM', '6']],
@@ -55,11 +57,8 @@ def go_build():
     if args.i:
         envs = [envs[args.i]]
 
-    VERSION = 'dev/unknown'
-    try:
-        VERSION = subprocess.check_output('git describe --tags --long --always', shell=True).decode().rstrip()
-    except subprocess.CalledProcessError as e:
-        logger.error(f'get git tag failed: {e.args}')
+    VERSION = f'Mosdns-x/v{datetime.datetime.now().strftime("%y.%m.%d")}'
+    print(f"Using version: {VERSION}")
 
     try:
         subprocess.check_call('go run ../ config gen config.yaml', shell=True, env=os.environ)
