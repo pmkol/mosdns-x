@@ -33,6 +33,7 @@ import (
 
 	"github.com/miekg/dns"
 	"github.com/quic-go/quic-go"
+	eTLS "gitlab.com/go-extension/tls"
 	"go.uber.org/zap"
 	"golang.org/x/net/http2"
 
@@ -106,6 +107,13 @@ type Opt struct {
 
 	// Logger specifies the logger that the upstream will use.
 	Logger *zap.Logger
+
+	// KernelTX and KernelRX control whether kernel TLS offloading is enabled
+	// If the kernel is not supported, it is automatically downgraded to the application implementation
+	//
+	// If this option is enabled, please mount the TLS module before you run application.
+	// On Linux, it will try to automatically mount the tls kernel module.
+	KernelRX, KernelTX bool
 }
 
 func NewUpstream(addr string, opt *Opt) (Upstream, error) {
@@ -186,12 +194,14 @@ func NewUpstream(addr string, opt *Opt) (Upstream, error) {
 		}
 		return transport.NewTransport(to)
 	case "dot", "tls":
-		var tlsConfig *tls.Config
+		tlsConfig := new(eTLS.Config)
 		if opt.TLSConfig != nil {
-			tlsConfig = opt.TLSConfig.Clone()
-		} else {
-			tlsConfig = new(tls.Config)
+			tlsConfig.InsecureSkipVerify = opt.TLSConfig.InsecureSkipVerify
+			tlsConfig.RootCAs = opt.TLSConfig.RootCAs
 		}
+		tlsConfig.KernelTX = opt.KernelTX
+		tlsConfig.KernelRX = opt.KernelRX
+		tlsConfig.ClientSessionCache = eTLS.NewLRUClientSessionCache(64)
 		if len(tlsConfig.ServerName) == 0 {
 			tlsConfig.ServerName = tryRemovePort(addrURL.Host)
 		}
@@ -204,7 +214,7 @@ func NewUpstream(addr string, opt *Opt) (Upstream, error) {
 				if err != nil {
 					return nil, err
 				}
-				tlsConn := tls.Client(conn, tlsConfig)
+				tlsConn := eTLS.Client(conn, tlsConfig)
 				if err := tlsConn.HandshakeContext(ctx); err != nil {
 					tlsConn.Close()
 					return nil, err
