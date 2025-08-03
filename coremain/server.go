@@ -126,6 +126,12 @@ func (m *Mosdns) startServerListener(cfg *ServerListenerConfig, dnsHandler dns_h
 			return err
 		}
 		run = func() error { return s.ServeUDP(conn) }
+	case "quic", "doq":
+		conn, err := config.ListenPacket(context.Background(), "udp", cfg.Addr)
+		if err != nil {
+			return err
+		}
+		run = func() error { return s.ServeQUIC(conn) }
 	case "tcp":
 		l, err := config.Listen(context.Background(), "tcp", cfg.Addr)
 		if err != nil {
