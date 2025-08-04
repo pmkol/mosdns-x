@@ -43,6 +43,7 @@ import (
 	"github.com/pmkol/mosdns-x/pkg/upstream/h3roundtripper"
 	mQUIC "github.com/pmkol/mosdns-x/pkg/upstream/quic"
 	"github.com/pmkol/mosdns-x/pkg/upstream/transport"
+	"github.com/pmkol/mosdns-x/pkg/upstream/udp"
 )
 
 const (
@@ -145,24 +146,6 @@ func NewUpstream(addr string, opt *Opt) (Upstream, error) {
 	switch addrURL.Scheme {
 	case "", "udp":
 		dialAddr := getDialAddrWithPort(addrURL.Host, opt.DialAddr, 53)
-
-		uto := transport.Opts{
-			Logger: opt.Logger,
-			DialFunc: func(ctx context.Context) (net.Conn, error) {
-				return dialer.DialContext(ctx, "udp", dialAddr)
-			},
-			WriteFunc: dnsutils.WriteMsgToUDP,
-			ReadFunc: func(c io.Reader) (*dns.Msg, int, error) {
-				return dnsutils.ReadMsgFromUDP(c, 4096)
-			},
-			EnablePipeline: true,
-			MaxConns:       opt.MaxConns,
-			IdleTimeout:    time.Second * 60,
-		}
-		ut, err := transport.NewTransport(uto)
-		if err != nil {
-			return nil, fmt.Errorf("cannot init udp transport, %w", err)
-		}
 		tto := transport.Opts{
 			Logger: opt.Logger,
 			DialFunc: func(ctx context.Context) (net.Conn, error) {
@@ -175,10 +158,17 @@ func NewUpstream(addr string, opt *Opt) (Upstream, error) {
 		if err != nil {
 			return nil, fmt.Errorf("cannot init tcp transport, %w", err)
 		}
-		return &udpWithFallback{
-			u: ut,
-			t: tt,
-		}, nil
+		return udp.NewUDPUpstream(dialAddr, func(ctx context.Context) (*net.UDPConn, error) {
+			conn, err := dialer.DialContext(ctx, "udp", dialAddr)
+			if err != nil {
+				return nil, err
+			}
+			udpConn, isUDPConn := conn.(*net.UDPConn)
+			if !isUDPConn {
+				return nil, fmt.Errorf("this in not a udp conn")
+			}
+			return udpConn, nil
+		}, tt)
 	case "tcp":
 		dialAddr := getDialAddrWithPort(addrURL.Host, opt.DialAddr, 53)
 		to := transport.Opts{
