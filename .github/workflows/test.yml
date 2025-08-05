@@ -9,13 +9,20 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: get latest go version
+        id: go
+        run: |
+          echo version=$(curl -s https://raw.githubusercontent.com/actions/go-versions/update-versions-manifest-file/versions-manifest.json | grep -oE '"version": "[0-9]{1}.[0-9]{1,}(.[0-9]{1,})?"' | head -1 | cut -d':' -f2 | sed 's/ //g; s/"//g') >> $GITHUB_OUTPUT
+
       - name: Set up Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v5.5.0
         with:
-          go-version: 1.19
-          check-latest: true
+          go-version: ${{steps.go.outputs.version}}
           cache: true
+
+      - uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0
 
       - name: Build
         run: go build -v ./...
