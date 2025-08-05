@@ -22,6 +22,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/quic-go/quic-go"
 	"go.uber.org/zap"
@@ -64,6 +65,15 @@ func (s *Server) ServeQUIC(l *quic.EarlyListener) error {
 	}
 	defer s.trackCloser(l, false)
 
+	firstReadTimeout := tcpFirstReadTimeout
+	idleTimeout := s.opts.IdleTimeout
+	if idleTimeout == 0 {
+		idleTimeout = defaultQUICIdleTimeout
+	}
+	if idleTimeout < firstReadTimeout {
+		firstReadTimeout = idleTimeout
+	}
+
 	// handle listener
 	listenerCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -87,17 +97,13 @@ func (s *Server) ServeQUIC(l *quic.EarlyListener) error {
 				return
 			}
 
-			firstReadTimeout := tcpFirstReadTimeout
-			idleTimeout := s.opts.IdleTimeout
-			if idleTimeout < firstReadTimeout {
-				firstReadTimeout = idleTimeout
-			}
-
 			clientAddr := utils.GetAddrFromAddr(c.RemoteAddr())
 			meta := &query_context.RequestMeta{
 				ClientAddr: clientAddr,
 			}
 			defer s.trackCloser(closer, false)
+
+			timeout := time.AfterFunc(firstReadTimeout, cancelConn)
 			for {
 				stream, err := c.AcceptStream(quicConnCtx)
 				if err != nil {
@@ -107,6 +113,7 @@ func (s *Server) ServeQUIC(l *quic.EarlyListener) error {
 				// handle stream
 				go func() {
 					req, _, err := dnsutils.ReadMsgFromTCP(stream)
+					timeout.Reset(idleTimeout)
 					if err != nil {
 						stream.CancelRead(1)
 						stream.CancelWrite(1)

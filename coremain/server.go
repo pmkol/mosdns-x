@@ -38,9 +38,6 @@ import (
 )
 
 const defaultQueryTimeout = time.Second * 5
-const (
-	defaultIdleTimeout = time.Second * 10
-)
 
 func (m *Mosdns) startServers(cfg *ServerConfig) error {
 	if len(cfg.Listeners) == 0 {
@@ -86,7 +83,7 @@ func (m *Mosdns) startServerListener(cfg *ServerListenerConfig, dnsHandler dns_h
 
 	m.logger.Info("starting server", zap.String("proto", cfg.Protocol), zap.String("addr", cfg.Addr))
 
-	idleTimeout := defaultIdleTimeout
+	idleTimeout := time.Duration(0)
 	if cfg.IdleTimeout > 0 {
 		idleTimeout = time.Duration(cfg.IdleTimeout) * time.Second
 	}
