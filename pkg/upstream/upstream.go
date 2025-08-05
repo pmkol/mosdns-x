@@ -268,13 +268,7 @@ func NewUpstream(addr string, opt *Opt) (Upstream, error) {
 
 		dialAddr := getDialAddrWithPort(addrURL.Host, opt.DialAddr, 443)
 		var t http.RoundTripper
-		var addonCloser io.Closer // udpConn
 		if opt.EnableHTTP3 {
-			conn, err := lc.ListenPacket(context.Background(), "udp", "")
-			if err != nil {
-				return nil, fmt.Errorf("failed to init udp socket for quic")
-			}
-			addonCloser = conn
 			t = &h3roundtripper.H3RTHelper{
 				Logger:    opt.Logger,
 				TLSConfig: opt.TLSConfig,
@@ -286,11 +280,20 @@ func NewUpstream(addr string, opt *Opt) (Upstream, error) {
 					MaxConnectionReceiveWindow:     64 * 1024,
 				},
 				DialFunc: func(ctx context.Context, _ string, tlsCfg *tls.Config, cfg *quic.Config) (*quic.Conn, error) {
-					ua, err := net.ResolveUDPAddr("udp", dialAddr)
+					c, err := dialer.DialContext(ctx, "udp", dialAddr)
 					if err != nil {
 						return nil, err
 					}
-					return quic.DialEarly(ctx, conn, ua, tlsCfg, cfg)
+					c.Close()
+					uc, isUC := c.(*net.UDPConn)
+					if !isUC {
+						return nil, fmt.Errorf("this is not an udp conn")
+					}
+					pc, err := lc.ListenPacket(ctx, "udp", "")
+					if err != nil {
+						return nil, err
+					}
+					return quic.DialEarly(ctx, pc, uc.RemoteAddr(), tlsCfg, cfg)
 				},
 			}
 		} else {
@@ -318,9 +321,8 @@ func NewUpstream(addr string, opt *Opt) (Upstream, error) {
 		}
 
 		return &doh.Upstream{
-			EndPoint:    addr,
-			Client:      &http.Client{Transport: t},
-			AddOnCloser: addonCloser,
+			EndPoint: addr,
+			Client:   &http.Client{Transport: t},
 		}, nil
 	default:
 		return nil, fmt.Errorf("unsupported protocol [%s]", addrURL.Scheme)
