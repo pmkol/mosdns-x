@@ -72,7 +72,7 @@ func (opts *ServerOpts) init() {
 	}
 
 	if opts.IdleTimeout <= 0 {
-		opts.IdleTimeout = defaultTCPIdleTimeout
+		opts.IdleTimeout = 0
 	}
 }
 
