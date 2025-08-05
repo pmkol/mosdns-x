@@ -51,6 +51,15 @@ func (s *Server) ServeTCP(l net.Listener) error {
 	}
 	defer s.trackCloser(l, false)
 
+	firstReadTimeout := tcpFirstReadTimeout
+	idleTimeout := s.opts.IdleTimeout
+	if idleTimeout == 0 {
+		idleTimeout = defaultTCPIdleTimeout
+	}
+	if idleTimeout < firstReadTimeout {
+		firstReadTimeout = idleTimeout
+	}
+
 	// handle listener
 	listenerCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -73,12 +82,6 @@ func (s *Server) ServeTCP(l net.Listener) error {
 				return
 			}
 			defer s.trackCloser(c, false)
-
-			firstReadTimeout := tcpFirstReadTimeout
-			idleTimeout := s.opts.IdleTimeout
-			if idleTimeout < firstReadTimeout {
-				firstReadTimeout = idleTimeout
-			}
 
 			clientAddr := utils.GetAddrFromAddr(c.RemoteAddr())
 			meta := &query_context.RequestMeta{
