@@ -44,9 +44,6 @@ type Upstream struct {
 	EndPoint string
 	// Client is a http.Client that sends http requests.
 	Client *http.Client
-
-	// AddOnCloser will be closed when Upstream is closed.
-	AddOnCloser io.Closer
 }
 
 func (u *Upstream) CloseIdleConnections() {
@@ -55,9 +52,6 @@ func (u *Upstream) CloseIdleConnections() {
 
 func (u *Upstream) Close() error {
 	u.Client.CloseIdleConnections()
-	if u.AddOnCloser != nil {
-		u.AddOnCloser.Close()
-	}
 	return nil
 }
 
