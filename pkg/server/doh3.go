@@ -21,10 +21,13 @@ package server
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
 )
+
+const defaultQUICIdleTimeout = 30 * time.Second
 
 func (s *Server) ServeH3(l *quic.EarlyListener) error {
 	defer l.Close()
@@ -33,9 +36,14 @@ func (s *Server) ServeH3(l *quic.EarlyListener) error {
 		return errMissingHTTPHandler
 	}
 
+	idleTimeout := s.opts.IdleTimeout
+	if idleTimeout == 0 {
+		idleTimeout = defaultQUICIdleTimeout
+	}
+
 	hs := &http3.Server{
 		Handler:        s.opts.HttpHandler,
-		IdleTimeout:    s.opts.IdleTimeout,
+		IdleTimeout:    idleTimeout,
 		MaxHeaderBytes: 2048,
 	}
 	if ok := s.trackCloser(hs, true); !ok {

@@ -32,12 +32,17 @@ func (s *Server) ServeHTTP(l net.Listener) error {
 		return errMissingHTTPHandler
 	}
 
+	idleTimeout := s.opts.IdleTimeout
+	if idleTimeout == 0 {
+		idleTimeout = defaultTCPIdleTimeout
+	}
+
 	hs := &http.Server{
 		Handler:           s.opts.HttpHandler,
 		ReadHeaderTimeout: time.Millisecond * 500,
 		ReadTimeout:       time.Second * 5,
 		WriteTimeout:      time.Second * 5,
-		IdleTimeout:       s.opts.IdleTimeout,
+		IdleTimeout:       idleTimeout,
 		MaxHeaderBytes:    2048,
 	}
 	if ok := s.trackCloser(hs, true); !ok {
