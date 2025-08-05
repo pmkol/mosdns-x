@@ -101,6 +101,8 @@ func (h *EntryHandler) ServeDNS(ctx context.Context, req *dns.Msg, meta *query_c
 		defer cancel()
 		ctx = newCtx
 	}
+	// cache original id
+	id := req.Id
 
 	// exec entry
 	qCtx := query_context.NewContext(req, meta)
@@ -124,6 +126,7 @@ func (h *EntryHandler) ServeDNS(ctx context.Context, req *dns.Msg, meta *query_c
 	if h.opts.RecursionAvailable {
 		respMsg.RecursionAvailable = true
 	}
+	respMsg.Id = id
 	return respMsg, nil
 }
 
