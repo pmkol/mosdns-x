@@ -23,6 +23,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"sync"
 	"time"
 
 	"go.uber.org/zap"
@@ -89,6 +90,8 @@ func (s *Server) ServeTCP(l net.Listener) error {
 			}
 
 			firstRead := true
+
+			var access sync.Mutex
 			for {
 				if firstRead {
 					firstRead = false
@@ -117,7 +120,10 @@ func (s *Server) ServeTCP(l net.Listener) error {
 					}
 					defer buf.Release()
 
-					if _, err := dnsutils.WriteRawMsgToTCP(c, b); err != nil {
+					access.Lock()
+					_, err = dnsutils.WriteRawMsgToTCP(c, b)
+					access.Unlock()
+					if err != nil {
 						s.opts.Logger.Warn("failed to write response", zap.Stringer("client", c.RemoteAddr()), zap.Error(err))
 						return
 					}
