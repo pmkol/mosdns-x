@@ -21,7 +21,6 @@ package misc_optm
 
 import (
 	"context"
-	"math/rand"
 
 	"github.com/miekg/dns"
 
@@ -36,7 +35,7 @@ const (
 )
 
 const (
-	maxUDPSize = 1200 // 1280 (min ipv6 mtu) - 40 (ipv6 header) - 8 (udp header) - 8 (pppoe header) - (24) reserved
+	maxUDPSize = 1232 // 1280 (min ipv6 mtu) - 40 (ipv6 header) - 8 (udp header)
 )
 
 func init() {
@@ -76,24 +75,6 @@ func (t *optm) Exec(ctx context.Context, qCtx *query_context.Context, next execu
 	r := qCtx.R()
 	if r == nil {
 		return nil
-	}
-
-	// Trim and shuffle answers for A and AAAA.
-	switch qt := q.Question[0].Qtype; qt {
-	case dns.TypeA, dns.TypeAAAA:
-		rr := r.Answer[:0]
-		for _, ar := range r.Answer {
-			if ar.Header().Rrtype == qt {
-				rr = append(rr, ar)
-			}
-			ar.Header().Name = q.Question[0].Name
-		}
-
-		rand.Shuffle(len(rr), func(i, j int) {
-			rr[i], rr[j] = rr[j], rr[i]
-		})
-
-		r.Answer = rr
 	}
 
 	// Remove padding
