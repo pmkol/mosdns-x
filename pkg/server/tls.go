@@ -103,7 +103,7 @@ func (s *Server) CreateQUICListner(conn net.PacketConn, nextProtos []string) (*q
 		InitialStreamReceiveWindow:     1252,
 		MaxStreamReceiveWindow:         4 * 1024,
 		InitialConnectionReceiveWindow: 8 * 1024,
-		MaxConnectionReceiveWindow:     64 * 1024,
+		MaxConnectionReceiveWindow:     16 * 1024,
 	})
 }
 
