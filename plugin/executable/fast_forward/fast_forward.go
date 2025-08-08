@@ -21,7 +21,6 @@ package fastforward
 
 import (
 	"context"
-	"crypto/tls"
 	"crypto/x509"
 	"errors"
 	"fmt"
@@ -61,20 +60,19 @@ type Args struct {
 }
 
 type UpstreamConfig struct {
-	Addr         string `yaml:"addr"` // required
-	DialAddr     string `yaml:"dial_addr"`
-	Trusted      bool   `yaml:"trusted"`
-	Socks5       string `yaml:"socks5"`
-	SoMark       int    `yaml:"so_mark"`
-	BindToDevice string `yaml:"bind_to_device"`
-
-	IdleTimeout        int    `yaml:"idle_timeout"`
-	MaxConns           int    `yaml:"max_conns"`
-	EnablePipeline     bool   `yaml:"enable_pipeline"`
-	Bootstrap          string `yaml:"bootstrap"`
-	InsecureSkipVerify bool   `yaml:"insecure_skip_verify"`
-	KernelTX           bool   `yaml:"kernel_tx"` // use kernel tls to send data
-	KernelRX           bool   `yaml:"kernel_rx"` // use kernel tls to receive data
+	Addr           string `yaml:"addr"` // required
+	DialAddr       string `yaml:"dial_addr"`
+	Trusted        bool   `yaml:"trusted"`
+	Socks5         string `yaml:"socks5"`
+	SoMark         int    `yaml:"so_mark"`
+	BindToDevice   string `yaml:"bind_to_device"`
+	IdleTimeout    int    `yaml:"idle_timeout"`
+	MaxConns       int    `yaml:"max_conns"`
+	EnablePipeline bool   `yaml:"enable_pipeline"`
+	Bootstrap      string `yaml:"bootstrap"`
+	Insecure       bool   `yaml:"insecure"`
+	KernelTX       bool   `yaml:"kernel_tx"` // use kernel tls to send data
+	KernelRX       bool   `yaml:"kernel_rx"` // use kernel tls to receive data
 }
 
 func Init(bp *coremain.BP, args interface{}) (p coremain.Plugin, err error) {
@@ -124,14 +122,11 @@ func newFastForward(bp *coremain.BP, args *Args) (*fastForward, error) {
 			MaxConns:       c.MaxConns,
 			EnablePipeline: c.EnablePipeline,
 			Bootstrap:      c.Bootstrap,
-			TLSConfig: &tls.Config{
-				InsecureSkipVerify: c.InsecureSkipVerify,
-				RootCAs:            rootCAs,
-				ClientSessionCache: tls.NewLRUClientSessionCache(64),
-			},
-			KernelTX: c.KernelTX,
-			KernelRX: c.KernelRX,
-			Logger:   bp.L(),
+			Insecure:       c.Insecure,
+			RootCAs:        rootCAs,
+			KernelTX:       c.KernelTX,
+			KernelRX:       c.KernelRX,
+			Logger:         bp.L(),
 		}
 
 		u, err := upstream.NewUpstream(c.Addr, opt)
