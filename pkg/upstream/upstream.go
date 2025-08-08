@@ -180,7 +180,7 @@ func NewUpstream(addr string, opt *Opt) (Upstream, error) {
 		}
 		return transport.NewTransport(to)
 	case "dot", "tls":
-		tlsConfig := createETLSConfig(opt, "dot", addrURL.Host)
+		tlsConfig := createETLSConfig(opt, "dot", tryRemovePort(addrURL.Host))
 		dialAddr := getDialAddrWithPort(addrURL.Host, opt.DialAddr, 853)
 		to := transport.Opts{
 			Logger: opt.Logger,
@@ -204,7 +204,7 @@ func NewUpstream(addr string, opt *Opt) (Upstream, error) {
 		}
 		return transport.NewTransport(to)
 	case "doq", "quic":
-		tlsConfig := createTLSConfig(opt, "doq", addrURL.Host)
+		tlsConfig := createTLSConfig(opt, "doq", tryRemovePort(addrURL.Host))
 		idleConnTimeout := time.Second * 30
 		if opt.IdleTimeout > 0 {
 			idleConnTimeout = opt.IdleTimeout
