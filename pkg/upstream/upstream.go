@@ -26,6 +26,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"net/netip"
 	"net/url"
 	"strconv"
 	"strings"
@@ -134,7 +135,7 @@ func NewUpstream(addr string, opt *Opt) (Upstream, error) {
 			bind_to_device: opt.BindToDevice,
 		}),
 	}
-	lc := net.ListenConfig{Control: getSocketControlFunc(socketOpts{
+	lc := &net.ListenConfig{Control: getSocketControlFunc(socketOpts{
 		so_mark:        opt.SoMark,
 		bind_to_device: opt.BindToDevice,
 	})}
@@ -219,20 +220,11 @@ func NewUpstream(addr string, opt *Opt) (Upstream, error) {
 			KeepAlivePeriod:                idleConnTimeout / 2,
 		}
 		return mQUIC.NewQUICUpstream(dialAddr, func(ctx context.Context) (*mQUIC.Conn, error) {
-			c, err := dialer.DialContext(ctx, "udp", dialAddr)
+			conn, err := dialQuicEarlyConn(ctx, dialAddr, dialer, lc, tlsConfig, quicConfig)
 			if err != nil {
 				return nil, err
 			}
-			c.Close()
-			uc, isUC := c.(*net.UDPConn)
-			if !isUC {
-				return nil, fmt.Errorf("this is not an udp conn")
-			}
-			pc, err := lc.ListenPacket(ctx, "udp", "")
-			if err != nil {
-				return nil, err
-			}
-			return mQUIC.Dial(ctx, pc, uc.RemoteAddr(), tlsConfig, quicConfig)
+			return mQUIC.NewConn(conn), nil
 		}), nil
 	case "http":
 		idleConnTimeout := time.Second * 30
@@ -289,20 +281,7 @@ func NewUpstream(addr string, opt *Opt) (Upstream, error) {
 				KeepAlivePeriod:                idleConnTimeout / 2,
 			},
 			Dial: func(ctx context.Context, _ string, tlsCfg *tls.Config, cfg *quic.Config) (*quic.Conn, error) {
-				c, err := dialer.DialContext(ctx, "udp", dialAddr)
-				if err != nil {
-					return nil, err
-				}
-				c.Close()
-				uc, isUC := c.(*net.UDPConn)
-				if !isUC {
-					return nil, fmt.Errorf("this is not an udp conn")
-				}
-				pc, err := lc.ListenPacket(ctx, "udp", "")
-				if err != nil {
-					return nil, err
-				}
-				return quic.DialEarly(ctx, pc, uc.RemoteAddr(), tlsCfg, cfg)
+				return dialQuicEarlyConn(ctx, dialAddr, dialer, lc, tlsCfg, cfg)
 			},
 		}), nil
 	default:
@@ -352,6 +331,29 @@ func tryRemovePort(s string) string {
 		return s
 	}
 	return host
+}
+
+func dialQuicEarlyConn(ctx context.Context, dialAddr string, dialer *net.Dialer, lc *net.ListenConfig, tlsCfg *tls.Config, cfg *quic.Config) (*quic.Conn, error) {
+	var addr net.Addr
+	if addrPort, err := netip.ParseAddrPort(dialAddr); err == nil {
+		addr = net.UDPAddrFromAddrPort(addrPort)
+	} else {
+		c, err := dialer.DialContext(ctx, "udp", dialAddr)
+		if err != nil {
+			return nil, err
+		}
+		c.Close()
+		uc, isUC := c.(*net.UDPConn)
+		if !isUC {
+			return nil, fmt.Errorf("this is not an udp conn")
+		}
+		addr = uc.RemoteAddr()
+	}
+	pc, err := lc.ListenPacket(ctx, "udp", "")
+	if err != nil {
+		return nil, err
+	}
+	return quic.DialEarly(ctx, pc, addr, tlsCfg, cfg)
 }
 
 type udpWithFallback struct {

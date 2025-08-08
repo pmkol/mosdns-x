@@ -21,9 +21,7 @@ package quic
 
 import (
 	"context"
-	"crypto/tls"
 	"errors"
-	"net"
 	"sync"
 
 	"github.com/miekg/dns"
@@ -47,11 +45,7 @@ type Conn struct {
 	sync.RWMutex
 }
 
-func Dial(ctx context.Context, pc net.PacketConn, addr net.Addr, tlsConfig *tls.Config, quicConfig *quic.Config) (*Conn, error) {
-	conn, err := quic.DialEarly(ctx, pc, addr, tlsConfig, quicConfig)
-	if err != nil {
-		return nil, err
-	}
+func NewConn(conn *quic.Conn) *Conn {
 	c := &Conn{
 		conn:       conn,
 		closed:     make(chan struct{}),
@@ -62,7 +56,7 @@ func Dial(ctx context.Context, pc net.PacketConn, addr net.Addr, tlsConfig *tls.
 		case <-c.closed:
 		case <-conn.Context().Done():
 		case <-conn.HandshakeComplete():
-			conn, err := conn.NextConnection(ctx)
+			conn, err := conn.NextConnection(context.Background())
 			if err != nil {
 				select {
 				case <-c.closed:
@@ -77,7 +71,7 @@ func Dial(ctx context.Context, pc net.PacketConn, addr net.Addr, tlsConfig *tls.
 			c.conn = conn
 		}
 	}()
-	return c, nil
+	return c
 }
 
 func (c *Conn) isActive() bool {
