@@ -128,7 +128,7 @@ func Test_fastUpstream(t *testing.T) {
 							&Opt{
 								IdleTimeout: time.Second,
 								MaxConns:    5,
-								TLSConfig:   &tls.Config{InsecureSkipVerify: true},
+								Insecure:    true,
 							},
 						)
 						if err != nil {

@@ -22,6 +22,7 @@ package upstream
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"fmt"
 	"io"
 	"net"
@@ -95,9 +96,11 @@ type Opt struct {
 	// HTTP3 is not supported.
 	Bootstrap string
 
-	// TLSConfig specifies the tls.Config that the TLS client will use.
-	// Available for DoT, DoH upstreams.
-	TLSConfig *tls.Config
+	// TLS skip certificate veriry
+	Insecure bool
+
+	// The set of root certificate authorities that clients use when verifying server certificates.
+	RootCAs *x509.CertPool
 
 	// Logger specifies the logger that the upstream will use.
 	Logger *zap.Logger
@@ -177,18 +180,7 @@ func NewUpstream(addr string, opt *Opt) (Upstream, error) {
 		}
 		return transport.NewTransport(to)
 	case "dot", "tls":
-		tlsConfig := new(eTLS.Config)
-		if opt.TLSConfig != nil {
-			tlsConfig.InsecureSkipVerify = opt.TLSConfig.InsecureSkipVerify
-			tlsConfig.RootCAs = opt.TLSConfig.RootCAs
-		}
-		tlsConfig.KernelTX = opt.KernelTX
-		tlsConfig.KernelRX = opt.KernelRX
-		tlsConfig.ClientSessionCache = eTLS.NewLRUClientSessionCache(64)
-		if len(tlsConfig.ServerName) == 0 {
-			tlsConfig.ServerName = tryRemovePort(addrURL.Host)
-		}
-
+		tlsConfig := createETLSConfig(opt, "dot", addrURL.Host)
 		dialAddr := getDialAddrWithPort(addrURL.Host, opt.DialAddr, 853)
 		to := transport.Opts{
 			Logger: opt.Logger,
@@ -212,23 +204,11 @@ func NewUpstream(addr string, opt *Opt) (Upstream, error) {
 		}
 		return transport.NewTransport(to)
 	case "doq", "quic":
-		var tlsConfig *tls.Config
-		if opt.TLSConfig != nil {
-			tlsConfig = opt.TLSConfig.Clone()
-		} else {
-			tlsConfig = new(tls.Config)
-		}
-		if len(tlsConfig.ServerName) == 0 {
-			tlsConfig.ServerName = tryRemovePort(addrURL.Host)
-		}
-
-		tlsConfig.NextProtos = []string{"doq"}
-
+		tlsConfig := createTLSConfig(opt, "doq", addrURL.Host)
 		idleConnTimeout := time.Second * 30
 		if opt.IdleTimeout > 0 {
 			idleConnTimeout = opt.IdleTimeout
 		}
-
 		dialAddr := getDialAddrWithPort(addrURL.Host, opt.DialAddr, 853)
 		quicConfig := &quic.Config{
 			TokenStore:                     quic.NewLRUTokenStore(1, 10),
@@ -273,17 +253,7 @@ func NewUpstream(addr string, opt *Opt) (Upstream, error) {
 		}
 		addrURL.Scheme = "https"
 		dialAddr := getDialAddrWithPort(addrURL.Host, opt.DialAddr, 443)
-		tlsConfig := &eTLS.Config{
-			KernelTX:           opt.KernelTX,
-			KernelRX:           opt.KernelRX,
-			ServerName:         addrURL.Hostname(),
-			NextProtos:         []string{"h2"},
-			ClientSessionCache: eTLS.NewLRUClientSessionCache(64),
-		}
-		if opt.TLSConfig != nil {
-			tlsConfig.InsecureSkipVerify = opt.TLSConfig.InsecureSkipVerify
-			tlsConfig.RootCAs = opt.TLSConfig.RootCAs
-		}
+		tlsConfig := createETLSConfig(opt, "h2", addrURL.Hostname())
 		return doh.NewUpstream(addrURL, &http.Transport{
 			DialTLSContext: func(ctx context.Context, network, _ string) (net.Conn, error) {
 				conn, err := dialer.DialContext(ctx, network, dialAddr)
@@ -307,14 +277,7 @@ func NewUpstream(addr string, opt *Opt) (Upstream, error) {
 		}
 		addrURL.Scheme = "https"
 		dialAddr := getDialAddrWithPort(addrURL.Host, opt.DialAddr, 443)
-		var tlsConfig *tls.Config
-		if opt.TLSConfig != nil {
-			tlsConfig = opt.TLSConfig.Clone()
-		} else {
-			tlsConfig = new(tls.Config)
-		}
-		tlsConfig.NextProtos = []string{"h3"}
-		tlsConfig.ServerName = addrURL.Hostname()
+		tlsConfig := createTLSConfig(opt, "h3", addrURL.Hostname())
 		return doh3.NewUpstream(addrURL, &http3.Transport{
 			TLSClientConfig: tlsConfig,
 			QUICConfig: &quic.Config{
@@ -345,6 +308,30 @@ func NewUpstream(addr string, opt *Opt) (Upstream, error) {
 	default:
 		return nil, fmt.Errorf("unsupported protocol [%s]", addrURL.Scheme)
 	}
+}
+
+func createTLSConfig(opt *Opt, alpn string, serverName string) *tls.Config {
+	config := &tls.Config{
+		InsecureSkipVerify: opt.Insecure,
+		RootCAs:            opt.RootCAs,
+		NextProtos:         []string{alpn},
+		ServerName:         serverName,
+		ClientSessionCache: tls.NewLRUClientSessionCache(64),
+	}
+	return config
+}
+
+func createETLSConfig(opt *Opt, alpn string, serverName string) *eTLS.Config {
+	config := &eTLS.Config{
+		KernelTX:           opt.KernelTX,
+		KernelRX:           opt.KernelRX,
+		InsecureSkipVerify: opt.Insecure,
+		RootCAs:            opt.RootCAs,
+		NextProtos:         []string{alpn},
+		ServerName:         serverName,
+		ClientSessionCache: eTLS.NewLRUClientSessionCache(64),
+	}
+	return config
 }
 
 func getDialAddrWithPort(host, dialAddr string, defaultPort int) string {
