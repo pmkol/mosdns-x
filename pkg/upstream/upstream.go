@@ -25,7 +25,6 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
@@ -33,21 +32,18 @@ import (
 
 	"github.com/miekg/dns"
 	"github.com/quic-go/quic-go"
+	"github.com/quic-go/quic-go/http3"
+	"gitlab.com/go-extension/http"
 	eTLS "gitlab.com/go-extension/tls"
 	"go.uber.org/zap"
-	"golang.org/x/net/http2"
 
 	"github.com/pmkol/mosdns-x/pkg/dnsutils"
 	"github.com/pmkol/mosdns-x/pkg/upstream/bootstrap"
 	"github.com/pmkol/mosdns-x/pkg/upstream/doh"
-	"github.com/pmkol/mosdns-x/pkg/upstream/h3roundtripper"
+	"github.com/pmkol/mosdns-x/pkg/upstream/doh3"
 	mQUIC "github.com/pmkol/mosdns-x/pkg/upstream/quic"
 	"github.com/pmkol/mosdns-x/pkg/upstream/transport"
 	"github.com/pmkol/mosdns-x/pkg/upstream/udp"
-)
-
-const (
-	tlsHandshakeTimeout = time.Second * 5
 )
 
 // Upstream represents a DNS upstream.
@@ -84,9 +80,6 @@ type Opt struct {
 	// EnablePipeline enables query pipelining support as RFC 7766 6.2.1.1 suggested.
 	// Available for TCP, DoT upstream with IdleTimeout >= 0.
 	EnablePipeline bool
-
-	// EnableHTTP3 enables HTTP/3 protocol for DoH upstream.
-	EnableHTTP3 bool
 
 	// MaxConns limits the total number of connections, including connections
 	// in the dialing states.
@@ -261,75 +254,94 @@ func NewUpstream(addr string, opt *Opt) (Upstream, error) {
 			}
 			return mQUIC.Dial(ctx, pc, uc.RemoteAddr(), tlsConfig, quicConfig)
 		}), nil
-	case "https":
+	case "http":
 		idleConnTimeout := time.Second * 30
 		if opt.IdleTimeout > 0 {
 			idleConnTimeout = opt.IdleTimeout
 		}
-		maxConn := 2
-		if opt.MaxConns > 0 {
-			maxConn = opt.MaxConns
+		dialAddr := getDialAddrWithPort(addrURL.Host, opt.DialAddr, 80)
+		return doh.NewUpstream(addrURL, &http.Transport{
+			DialContext: func(ctx context.Context, network, _ string) (net.Conn, error) {
+				return dialer.DialContext(ctx, network, dialAddr)
+			},
+			IdleConnTimeout: idleConnTimeout,
+		}), nil
+	case "https", "h2", "doh":
+		idleConnTimeout := time.Second * 30
+		if opt.IdleTimeout > 0 {
+			idleConnTimeout = opt.IdleTimeout
 		}
-
+		addrURL.Scheme = "https"
 		dialAddr := getDialAddrWithPort(addrURL.Host, opt.DialAddr, 443)
-		var t http.RoundTripper
-		if opt.EnableHTTP3 {
-			t = &h3roundtripper.H3RTHelper{
-				Logger:    opt.Logger,
-				TLSConfig: opt.TLSConfig,
-				QUICConfig: &quic.Config{
-					TokenStore:                     quic.NewLRUTokenStore(1, 10),
-					InitialStreamReceiveWindow:     4 * 1024,
-					MaxStreamReceiveWindow:         4 * 1024,
-					InitialConnectionReceiveWindow: 8 * 1024,
-					MaxConnectionReceiveWindow:     64 * 1024,
-					KeepAlivePeriod:                idleConnTimeout / 2,
-				},
-				DialFunc: func(ctx context.Context, _ string, tlsCfg *tls.Config, cfg *quic.Config) (*quic.Conn, error) {
-					c, err := dialer.DialContext(ctx, "udp", dialAddr)
-					if err != nil {
-						return nil, err
-					}
-					c.Close()
-					uc, isUC := c.(*net.UDPConn)
-					if !isUC {
-						return nil, fmt.Errorf("this is not an udp conn")
-					}
-					pc, err := lc.ListenPacket(ctx, "udp", "")
-					if err != nil {
-						return nil, err
-					}
-					return quic.DialEarly(ctx, pc, uc.RemoteAddr(), tlsCfg, cfg)
-				},
-			}
-		} else {
-			t1 := &http.Transport{
-				DialContext: func(ctx context.Context, network, _ string) (net.Conn, error) { // overwrite server addr
-					return dialTCP(ctx, dialAddr, opt.Socks5, dialer)
-				},
-				TLSClientConfig:     opt.TLSConfig,
-				TLSHandshakeTimeout: tlsHandshakeTimeout,
-				IdleConnTimeout:     idleConnTimeout,
-
-				// MaxConnsPerHost and MaxIdleConnsPerHost should be equal.
-				// Otherwise, it might seriously affect the efficiency of connection reuse.
-				MaxConnsPerHost:     maxConn,
-				MaxIdleConnsPerHost: maxConn,
-			}
-
-			t2, err := http2.ConfigureTransports(t1)
-			if err != nil {
-				return nil, fmt.Errorf("failed to upgrade http2 support, %w", err)
-			}
-			t2.ReadIdleTimeout = time.Second * 30
-			t2.PingTimeout = time.Second * 5
-			t = t1
+		tlsConfig := &eTLS.Config{
+			KernelTX:           opt.KernelTX,
+			KernelRX:           opt.KernelRX,
+			ServerName:         addrURL.Hostname(),
+			NextProtos:         []string{"h2"},
+			ClientSessionCache: eTLS.NewLRUClientSessionCache(64),
 		}
-
-		return &doh.Upstream{
-			EndPoint: addr,
-			Client:   &http.Client{Transport: t},
-		}, nil
+		if opt.TLSConfig != nil {
+			tlsConfig.InsecureSkipVerify = opt.TLSConfig.InsecureSkipVerify
+			tlsConfig.RootCAs = opt.TLSConfig.RootCAs
+		}
+		return doh.NewUpstream(addrURL, &http.Transport{
+			DialTLSContext: func(ctx context.Context, network, _ string) (net.Conn, error) {
+				conn, err := dialer.DialContext(ctx, network, dialAddr)
+				if err != nil {
+					return nil, err
+				}
+				tlsConn := eTLS.Client(conn, tlsConfig)
+				if err := tlsConn.HandshakeContext(ctx); err != nil {
+					tlsConn.Close()
+					return nil, err
+				}
+				return tlsConn, nil
+			},
+			IdleConnTimeout:   idleConnTimeout,
+			ForceAttemptHTTP2: true,
+		}), nil
+	case "h3", "doh3":
+		idleConnTimeout := time.Second * 30
+		if opt.IdleTimeout > 0 {
+			idleConnTimeout = opt.IdleTimeout
+		}
+		addrURL.Scheme = "https"
+		dialAddr := getDialAddrWithPort(addrURL.Host, opt.DialAddr, 443)
+		var tlsConfig *tls.Config
+		if opt.TLSConfig != nil {
+			tlsConfig = opt.TLSConfig.Clone()
+		} else {
+			tlsConfig = new(tls.Config)
+		}
+		tlsConfig.NextProtos = []string{"h3"}
+		tlsConfig.ServerName = addrURL.Hostname()
+		return doh3.NewUpstream(addrURL, &http3.Transport{
+			TLSClientConfig: tlsConfig,
+			QUICConfig: &quic.Config{
+				TokenStore:                     quic.NewLRUTokenStore(1, 10),
+				InitialStreamReceiveWindow:     4 * 1024,
+				MaxStreamReceiveWindow:         4 * 1024,
+				InitialConnectionReceiveWindow: 8 * 1024,
+				MaxConnectionReceiveWindow:     64 * 1024,
+				KeepAlivePeriod:                idleConnTimeout / 2,
+			},
+			Dial: func(ctx context.Context, _ string, tlsCfg *tls.Config, cfg *quic.Config) (*quic.Conn, error) {
+				c, err := dialer.DialContext(ctx, "udp", dialAddr)
+				if err != nil {
+					return nil, err
+				}
+				c.Close()
+				uc, isUC := c.(*net.UDPConn)
+				if !isUC {
+					return nil, fmt.Errorf("this is not an udp conn")
+				}
+				pc, err := lc.ListenPacket(ctx, "udp", "")
+				if err != nil {
+					return nil, err
+				}
+				return quic.DialEarly(ctx, pc, uc.RemoteAddr(), tlsCfg, cfg)
+			},
+		}), nil
 	default:
 		return nil, fmt.Errorf("unsupported protocol [%s]", addrURL.Scheme)
 	}

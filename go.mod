@@ -21,6 +21,7 @@ require (
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.20.1
 	github.com/stretchr/testify v1.10.0
+	gitlab.com/go-extension/http v0.0.0-20250719151615-08a618538a4f
 	gitlab.com/go-extension/tls v0.0.0-20250722152942-833403b40b08
 	go.uber.org/zap v1.27.0
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba
