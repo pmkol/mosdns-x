@@ -20,9 +20,16 @@
 package server
 
 import (
+	"context"
+	"io"
 	"net"
-	"net/http"
+	"net/netip"
+	"net/url"
 	"time"
+
+	"gitlab.com/go-extension/http"
+
+	H "github.com/pmkol/mosdns-x/pkg/server/http_handler"
 )
 
 func (s *Server) ServeHTTP(l net.Listener) error {
@@ -38,7 +45,7 @@ func (s *Server) ServeHTTP(l net.Listener) error {
 	}
 
 	hs := &http.Server{
-		Handler:           s.opts.HttpHandler,
+		Handler:           &eHandler{s.opts.HttpHandler},
 		ReadHeaderTimeout: time.Millisecond * 500,
 		ReadTimeout:       time.Second * 5,
 		WriteTimeout:      time.Second * 5,
@@ -57,4 +64,64 @@ func (s *Server) ServeHTTP(l net.Listener) error {
 		return err
 	}
 	return nil
+}
+
+type eHandler struct {
+	h *H.Handler
+}
+
+func (h *eHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	h.h.ServeHTTP(&eWriter{w}, &eRequest{r})
+}
+
+type eRequest struct {
+	r *http.Request
+}
+
+func (r *eRequest) URL() *url.URL {
+	return r.r.URL
+}
+
+func (r *eRequest) Body() io.ReadCloser {
+	return r.r.Body
+}
+
+func (r *eRequest) Header() H.Header {
+	return r.r.Header
+}
+
+func (r *eRequest) Method() string {
+	return r.r.Method
+}
+
+func (r *eRequest) Context() context.Context {
+	return r.r.Context()
+}
+
+func (r *eRequest) RequestURI() string {
+	return r.r.RequestURI
+}
+
+func (r *eRequest) GetRemoteAddr() string {
+	return r.r.RemoteAddr
+}
+
+func (r *eRequest) SetRemoteAddr(addr netip.Addr) {
+	r.r.RemoteAddr = addr.String()
+}
+
+type eWriter struct {
+	w http.ResponseWriter
+}
+
+func (w *eWriter) Header() H.Header {
+	return w.w.Header()
+}
+
+func (w *eWriter) Write(b []byte) (int, error) {
+	return w.w.Write(b)
+}
+
+func (w *eWriter) WriteHeader(statusCode int) {
+	w.w.WriteHeader(statusCode)
 }
