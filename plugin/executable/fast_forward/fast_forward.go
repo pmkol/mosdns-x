@@ -71,7 +71,6 @@ type UpstreamConfig struct {
 	IdleTimeout        int    `yaml:"idle_timeout"`
 	MaxConns           int    `yaml:"max_conns"`
 	EnablePipeline     bool   `yaml:"enable_pipeline"`
-	EnableHTTP3        bool   `yaml:"enable_http3"`
 	Bootstrap          string `yaml:"bootstrap"`
 	InsecureSkipVerify bool   `yaml:"insecure_skip_verify"`
 	KernelTX           bool   `yaml:"kernel_tx"` // use kernel tls to send data
@@ -124,7 +123,6 @@ func newFastForward(bp *coremain.BP, args *Args) (*fastForward, error) {
 			IdleTimeout:    time.Duration(c.IdleTimeout) * time.Second,
 			MaxConns:       c.MaxConns,
 			EnablePipeline: c.EnablePipeline,
-			EnableHTTP3:    c.EnableHTTP3,
 			Bootstrap:      c.Bootstrap,
 			TLSConfig: &tls.Config{
 				InsecureSkipVerify: c.InsecureSkipVerify,
