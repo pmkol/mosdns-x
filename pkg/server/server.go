@@ -22,13 +22,13 @@ package server
 import (
 	"errors"
 	"io"
-	"net/http"
 	"sync"
 	"time"
 
 	"go.uber.org/zap"
 
-	"github.com/pmkol/mosdns-x/pkg/server/dns_handler"
+	D "github.com/pmkol/mosdns-x/pkg/server/dns_handler"
+	H "github.com/pmkol/mosdns-x/pkg/server/http_handler"
 )
 
 var (
@@ -45,10 +45,10 @@ type ServerOpts struct {
 	Logger *zap.Logger
 
 	// DNSHandler is the dns handler required by UDP, TCP, DoT server.
-	DNSHandler dns_handler.Handler
+	DNSHandler D.Handler
 
 	// HttpHandler is the http handler required by HTTP, DoH server.
-	HttpHandler http.Handler
+	HttpHandler *H.Handler
 
 	// Certificate files to start DoT, DoH server.
 	// Only useful if there is no server certificate specified in TLSConfig.
@@ -137,5 +137,4 @@ func (s *Server) Close() {
 	for closer := range s.closerTracker {
 		closer.Close()
 	}
-	return
 }
