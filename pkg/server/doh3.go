@@ -20,11 +20,16 @@
 package server
 
 import (
+	"context"
+	"io"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
+
+	H "github.com/pmkol/mosdns-x/pkg/server/http_handler"
 )
 
 const defaultQUICIdleTimeout = 30 * time.Second
@@ -42,7 +47,7 @@ func (s *Server) ServeH3(l *quic.EarlyListener) error {
 	}
 
 	hs := &http3.Server{
-		Handler:        s.opts.HttpHandler,
+		Handler:        &sHandler{s.opts.HttpHandler},
 		IdleTimeout:    idleTimeout,
 		MaxHeaderBytes: 2048,
 	}
@@ -58,4 +63,64 @@ func (s *Server) ServeH3(l *quic.EarlyListener) error {
 		return err
 	}
 	return nil
+}
+
+type sHandler struct {
+	h *H.Handler
+}
+
+func (h *sHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	h.h.ServeHTTP(&sWriter{w}, &sRequest{r})
+}
+
+type sRequest struct {
+	r *http.Request
+}
+
+func (r *sRequest) URL() *url.URL {
+	return r.r.URL
+}
+
+func (r *sRequest) Body() io.ReadCloser {
+	return r.r.Body
+}
+
+func (r *sRequest) Header() H.Header {
+	return r.r.Header
+}
+
+func (r *sRequest) Method() string {
+	return r.r.Method
+}
+
+func (r *sRequest) Context() context.Context {
+	return r.r.Context()
+}
+
+func (r *sRequest) RequestURI() string {
+	return r.r.RequestURI
+}
+
+func (r *sRequest) GetRemoteAddr() string {
+	return r.r.RemoteAddr
+}
+
+func (r *sRequest) SetRemoteAddr(addr string) {
+	r.r.RemoteAddr = addr
+}
+
+type sWriter struct {
+	w http.ResponseWriter
+}
+
+func (w *sWriter) Header() H.Header {
+	return w.w.Header()
+}
+
+func (w *sWriter) Write(b []byte) (int, error) {
+	return w.w.Write(b)
+}
+
+func (w *sWriter) WriteHeader(statusCode int) {
+	w.w.WriteHeader(statusCode)
 }

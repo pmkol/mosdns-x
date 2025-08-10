@@ -107,22 +107,6 @@ func (s *Server) CreateQUICListner(conn net.PacketConn, nextProtos []string) (*q
 	})
 }
 
-func (s *Server) CreateTLSListner(l net.Listener, nextProtos []string) (net.Listener, error) {
-	if s.opts.Cert == "" || s.opts.Key == "" {
-		return nil, errors.New("missing certificate for tls listener")
-	}
-	c, err := tryCreateWatchCert(s.opts.Cert, s.opts.Key, tls.LoadX509KeyPair)
-	if err != nil {
-		return nil, err
-	}
-	return tls.NewListener(l, &tls.Config{
-		NextProtos: nextProtos,
-		GetCertificate: func(_ *tls.ClientHelloInfo) (*tls.Certificate, error) {
-			return c.c, nil
-		},
-	}), nil
-}
-
 func (s *Server) CreateETLSListner(l net.Listener, nextProtos []string) (net.Listener, error) {
 	if s.opts.Cert == "" || s.opts.Key == "" {
 		return nil, errors.New("missing certificate for tls listener")

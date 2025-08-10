@@ -33,8 +33,8 @@ import (
 
 	"github.com/pmkol/mosdns-x/coremain/listen"
 	"github.com/pmkol/mosdns-x/pkg/server"
-	"github.com/pmkol/mosdns-x/pkg/server/dns_handler"
-	"github.com/pmkol/mosdns-x/pkg/server/http_handler"
+	D "github.com/pmkol/mosdns-x/pkg/server/dns_handler"
+	H "github.com/pmkol/mosdns-x/pkg/server/http_handler"
 )
 
 const defaultQueryTimeout = time.Second * 5
@@ -57,13 +57,12 @@ func (m *Mosdns) startServers(cfg *ServerConfig) error {
 		queryTimeout = time.Duration(cfg.Timeout) * time.Second
 	}
 
-	dnsHandlerOpts := dns_handler.EntryHandlerOpts{
+	dnsHandler, err := D.NewEntryHandler(D.EntryHandlerOpts{
 		Logger:             m.logger,
 		Entry:              entry,
 		QueryTimeout:       queryTimeout,
 		RecursionAvailable: true,
-	}
-	dnsHandler, err := dns_handler.NewEntryHandler(dnsHandlerOpts)
+	})
 	if err != nil {
 		return fmt.Errorf("failed to init entry handler, %w", err)
 	}
@@ -76,7 +75,7 @@ func (m *Mosdns) startServers(cfg *ServerConfig) error {
 	return nil
 }
 
-func (m *Mosdns) startServerListener(cfg *ServerListenerConfig, dnsHandler dns_handler.Handler) error {
+func (m *Mosdns) startServerListener(cfg *ServerListenerConfig, dnsHandler D.Handler) error {
 	if len(cfg.Addr) == 0 {
 		return errors.New("no address to bind")
 	}
@@ -88,14 +87,12 @@ func (m *Mosdns) startServerListener(cfg *ServerListenerConfig, dnsHandler dns_h
 		idleTimeout = time.Duration(cfg.IdleTimeout) * time.Second
 	}
 
-	httpOpts := http_handler.HandlerOpts{
+	httpHandler, err := H.NewHandler(H.HandlerOpts{
 		DNSHandler:  dnsHandler,
 		Path:        cfg.URLPath,
 		SrcIPHeader: cfg.GetUserIPFromHeader,
 		Logger:      m.logger,
-	}
-
-	httpHandler, err := http_handler.NewHandler(httpOpts)
+	})
 	if err != nil {
 		return fmt.Errorf("failed to init http handler, %w", err)
 	}
@@ -187,7 +184,7 @@ func (m *Mosdns) startServerListener(cfg *ServerListenerConfig, dnsHandler dns_h
 		case "http":
 			run = func() error { return s.ServeHTTP(l) }
 		case "https", "doh":
-			l, err = s.CreateTLSListner(l, []string{"h2"})
+			l, err = s.CreateETLSListner(l, []string{"h2"})
 			if err != nil {
 				return err
 			}
