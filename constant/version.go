@@ -17,33 +17,16 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package main
+package constant
 
-import (
-	"fmt"
-	_ "net/http/pprof"
+import "time"
 
-	"github.com/spf13/cobra"
+var Version = "unknown"
 
-	C "github.com/pmkol/mosdns-x/constant"
-	"github.com/pmkol/mosdns-x/coremain"
-	"github.com/pmkol/mosdns-x/mlog"
-	_ "github.com/pmkol/mosdns-x/plugin"
-	_ "github.com/pmkol/mosdns-x/tools"
-)
+var BuildTime = "00.00.00"
 
 func init() {
-	coremain.AddSubCmd(&cobra.Command{
-		Use:   "version",
-		Short: "Print out version info and exit.",
-		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Printf("version: v%s, build time: %s\n", C.Version, C.BuildTime)
-		},
-	})
-}
-
-func main() {
-	if err := coremain.Run(); err != nil {
-		mlog.S().Fatal(err)
+	if BuildTime == "00.00.00" {
+		BuildTime = time.Now().Format("06.01.02")
 	}
 }

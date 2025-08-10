@@ -57,7 +57,8 @@ def go_build():
     if args.i:
         envs = [envs[args.i]]
 
-    VERSION = f'Mosdns-x/v{datetime.datetime.now().strftime("%y.%m.%d")}'
+    VERSION = f'4.6.0'
+    BuildTime = f'{datetime.datetime.now().strftime("%y.%m.%d")}'
     print(f"Using version: {VERSION}")
 
     try:
@@ -81,7 +82,7 @@ def go_build():
         logger.info(f'building {zip_filename}')
         try:
             subprocess.check_call(
-                f'go build -ldflags "-s -w -X main.version={VERSION}" -trimpath -o {bin_filename} ../', shell=True,
+                f'go build -ldflags "-s -w -buildid= -X github.com/pmkol/mosdns-x/constant.Version={VERSION} -X github.com/pmkol/mosdns-x/constant.BuildTime={BuildTime}" -trimpath -o {bin_filename} ../', shell=True,
                 env=os_env)
 
             if args.upx:

@@ -30,6 +30,7 @@ import (
 	"github.com/miekg/dns"
 	"github.com/quic-go/quic-go/http3"
 
+	C "github.com/pmkol/mosdns-x/constant"
 	"github.com/pmkol/mosdns-x/pkg/pool"
 )
 
@@ -59,7 +60,7 @@ func (u *Upstream) ExchangeContext(ctx context.Context, q *dns.Msg) (*dns.Msg, e
 	}
 	req.Header.Set("Content-Type", dnsContentType)
 	req.Header.Set("Accept", dnsContentType)
-	req.Header.Set("User-Agent", "mosdns-x")
+	req.Header.Set("User-Agent", fmt.Sprintf("mosdns-x/%s", C.Version))
 	res, err := u.transport.RoundTrip(req)
 	if err != nil {
 		return nil, err
