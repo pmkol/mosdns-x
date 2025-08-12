@@ -31,6 +31,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/gobwas/glob"
 	"github.com/miekg/dns"
 	"go.uber.org/zap"
 
@@ -122,11 +123,25 @@ func (h *Handler) ServeHTTP(w ResponseWriter, req Request) {
 	}
 
 	// check accept header
-	if accept := req.Header().Get("Accept"); accept != "application/dns-message" {
+	if accept := req.Header().Get("Accept"); accept == "" {
 		w.WriteHeader(http.StatusPreconditionFailed)
-		w.Write([]byte("invalid Accept header"))
-		h.warnErr(req, fmt.Errorf("invalid Accept header %s", accept))
+		w.Write([]byte("empty Accept header"))
+		h.warnErr(req, fmt.Errorf("empty Accept header"))
 		return
+	} else {
+		var matched bool
+		for pattern := range strings.SplitSeq(accept, ";") {
+			if glob.MustCompile(strings.TrimSpace(pattern)).Match("application/dns-message") {
+				matched = true
+				break
+			}
+		}
+		if !matched {
+			w.WriteHeader(http.StatusPreconditionFailed)
+			w.Write([]byte("invalid Accept header"))
+			h.warnErr(req, fmt.Errorf("invalid Accept header: %s", accept))
+			return
+		}
 	}
 
 	var b []byte
