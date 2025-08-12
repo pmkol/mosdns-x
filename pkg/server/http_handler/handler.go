@@ -195,6 +195,10 @@ func (h *Handler) ServeHTTP(w ResponseWriter, req Request) {
 		return
 	}
 
+	if m.Id != 0 {
+		h.opts.Logger.Debug(fmt.Sprintf("irregular message id: %d", m.Id))
+	}
+
 	r, err := h.opts.DNSHandler.ServeDNS(req.Context(), m, &meta)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
