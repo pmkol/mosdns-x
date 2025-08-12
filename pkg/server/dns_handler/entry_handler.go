@@ -22,6 +22,7 @@ package dns_handler
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -101,6 +102,18 @@ func (h *EntryHandler) ServeDNS(ctx context.Context, req *dns.Msg, meta *query_c
 		defer cancel()
 		ctx = newCtx
 	}
+	// return FORMERR response
+	if len(req.Question) == 0 {
+		h.opts.Logger.Warn("zero question")
+		return h.responseFormErr(req), nil
+	}
+	for _, question := range req.Question {
+		_, ok := dns.IsDomainName(question.Name)
+		if !ok {
+			h.opts.Logger.Warn(fmt.Sprintf("invalid question name: %s", question.Name))
+			return h.responseFormErr(req), nil
+		}
+	}
 	// cache original id
 	id := req.Id
 
@@ -128,6 +141,16 @@ func (h *EntryHandler) ServeDNS(ctx context.Context, req *dns.Msg, meta *query_c
 	}
 	respMsg.Id = id
 	return respMsg, nil
+}
+
+func (h *EntryHandler) responseFormErr(req *dns.Msg) *dns.Msg {
+	res := new(dns.Msg)
+	res.SetReply(req)
+	res.Rcode = dns.RcodeFormatError
+	if h.opts.RecursionAvailable {
+		res.RecursionAvailable = true
+	}
+	return res
 }
 
 type DummyServerHandler struct {
