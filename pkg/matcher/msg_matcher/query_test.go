@@ -31,7 +31,7 @@ import (
 	"github.com/pmkol/mosdns-x/pkg/matcher/domain"
 	"github.com/pmkol/mosdns-x/pkg/matcher/elem"
 	"github.com/pmkol/mosdns-x/pkg/matcher/netlist"
-	"github.com/pmkol/mosdns-x/pkg/query_context"
+	C "github.com/pmkol/mosdns-x/pkg/query_context"
 )
 
 func TestClientIPMatcher_Match(t *testing.T) {
@@ -39,7 +39,7 @@ func TestClientIPMatcher_Match(t *testing.T) {
 		ipMatcher netlist.Matcher
 	}
 	type args struct {
-		qCtx *query_context.Context
+		qCtx *C.Context
 	}
 
 	nl := netlist.NewList()
@@ -49,9 +49,9 @@ func TestClientIPMatcher_Match(t *testing.T) {
 	nl.Sort()
 
 	msg := new(dns.Msg)
-	meta1271 := &query_context.RequestMeta{ClientAddr: netip.MustParseAddr("127.0.0.1")}
-	meta1281 := &query_context.RequestMeta{ClientAddr: netip.MustParseAddr("128.0.0.1")}
-	metaNilAddr := &query_context.RequestMeta{}
+	meta1271 := C.NewRequestMeta(netip.MustParseAddr("127.0.0.1"))
+	meta1281 := C.NewRequestMeta(netip.MustParseAddr("128.0.0.1"))
+	metaNilAddr := new(C.RequestMeta)
 
 	tests := []struct {
 		name        string
@@ -60,10 +60,10 @@ func TestClientIPMatcher_Match(t *testing.T) {
 		wantMatched bool
 		wantErr     bool
 	}{
-		{"matched", fields{ipMatcher: nl}, args{query_context.NewContext(msg, meta1271)}, true, false},
-		{"not matched", fields{ipMatcher: nl}, args{query_context.NewContext(msg, meta1281)}, false, false},
-		{"no meta", fields{ipMatcher: nl}, args{query_context.NewContext(msg, nil)}, false, false},
-		{"no addr", fields{ipMatcher: nl}, args{query_context.NewContext(msg, metaNilAddr)}, false, false},
+		{"matched", fields{ipMatcher: nl}, args{C.NewContext(msg, meta1271)}, true, false},
+		{"not matched", fields{ipMatcher: nl}, args{C.NewContext(msg, meta1281)}, false, false},
+		{"no meta", fields{ipMatcher: nl}, args{C.NewContext(msg, nil)}, false, false},
+		{"no addr", fields{ipMatcher: nl}, args{C.NewContext(msg, metaNilAddr)}, false, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -104,14 +104,14 @@ func TestClientECSMatcher_Match(t *testing.T) {
 	tests := []struct {
 		name        string
 		matcher     netlist.Matcher
-		qCtx        *query_context.Context
+		qCtx        *C.Context
 		wantMatched bool
 		wantErr     bool
 	}{
-		{"matched", nl, query_context.NewContext(msg1271, nil), true, false},
-		{"not matched", nl, query_context.NewContext(msg1281, nil), false, false},
-		{"no ecs", nl, query_context.NewContext(msgWithOPT, nil), false, false},
-		{"no opt", nl, query_context.NewContext(msgWithoutOPT, nil), false, false},
+		{"matched", nl, C.NewContext(msg1271, nil), true, false},
+		{"not matched", nl, C.NewContext(msg1281, nil), false, false},
+		{"no ecs", nl, C.NewContext(msgWithOPT, nil), false, false},
+		{"no opt", nl, C.NewContext(msgWithoutOPT, nil), false, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

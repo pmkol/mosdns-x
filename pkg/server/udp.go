@@ -28,7 +28,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/pmkol/mosdns-x/pkg/pool"
-	"github.com/pmkol/mosdns-x/pkg/query_context"
+	C "github.com/pmkol/mosdns-x/pkg/query_context"
 	"github.com/pmkol/mosdns-x/pkg/utils"
 )
 
@@ -88,9 +88,7 @@ func (s *Server) ServeUDP(c net.PacketConn) error {
 
 		// handle query
 		go func() {
-			meta := &query_context.RequestMeta{
-				ClientAddr: clientAddr,
-			}
+			meta := C.NewRequestMeta(clientAddr)
 
 			r, err := handler.ServeDNS(listenerCtx, q, meta)
 			if err != nil {

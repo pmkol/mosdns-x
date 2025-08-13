@@ -155,7 +155,7 @@ func (e *ecsPlugin) addECS(qCtx *query_context.Context) (upgraded bool, newECS b
 
 	var ecs *dns.EDNS0_SUBNET
 	if e.args.Auto { // use client ip
-		clientAddr := qCtx.ReqMeta().ClientAddr
+		clientAddr := qCtx.ReqMeta().GetClientAddr()
 		if !clientAddr.IsValid() {
 			return false, false
 		}

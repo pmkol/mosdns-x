@@ -30,7 +30,7 @@ import (
 
 	"github.com/pmkol/mosdns-x/pkg/dnsutils"
 	"github.com/pmkol/mosdns-x/pkg/pool"
-	"github.com/pmkol/mosdns-x/pkg/query_context"
+	C "github.com/pmkol/mosdns-x/pkg/query_context"
 	"github.com/pmkol/mosdns-x/pkg/utils"
 )
 
@@ -85,9 +85,7 @@ func (s *Server) ServeTCP(l net.Listener) error {
 			defer s.trackCloser(c, false)
 
 			clientAddr := utils.GetAddrFromAddr(c.RemoteAddr())
-			meta := &query_context.RequestMeta{
-				ClientAddr: clientAddr,
-			}
+			meta := C.NewRequestMeta(clientAddr)
 
 			firstRead := true
 

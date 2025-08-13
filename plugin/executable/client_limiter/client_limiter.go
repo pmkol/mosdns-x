@@ -72,7 +72,7 @@ func NewLimiter(bp *coremain.BP, args *Args) (*Limiter, error) {
 }
 
 func (l *Limiter) Exec(ctx context.Context, qCtx *query_context.Context, next executable_seq.ExecutableChainNode) error {
-	addr := qCtx.ReqMeta().ClientAddr
+	addr := qCtx.ReqMeta().GetClientAddr()
 	if !addr.IsValid() {
 		return executable_seq.ExecChainNode(ctx, qCtx, next)
 	}
