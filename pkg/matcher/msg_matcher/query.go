@@ -41,7 +41,7 @@ func NewClientIPMatcher(ipMatcher netlist.Matcher) *ClientIPMatcher {
 }
 
 func (m *ClientIPMatcher) Match(_ context.Context, qCtx *query_context.Context) (matched bool, err error) {
-	clientAddr := qCtx.ReqMeta().ClientAddr
+	clientAddr := qCtx.ReqMeta().GetClientAddr()
 	if !clientAddr.IsValid() {
 		return false, nil
 	}

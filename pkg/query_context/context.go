@@ -37,10 +37,27 @@ import (
 type RequestMeta struct {
 	// ClientAddr contains the client ip address.
 	// It might be zero/invalid.
-	ClientAddr netip.Addr
+	clientAddr netip.Addr
+}
 
-	// FromUDP indicates the request is from an udp socket.
-	FromUDP bool
+func NewRequestMeta(addr netip.Addr) *RequestMeta {
+	meta := new(RequestMeta)
+	meta.SetClientAddr(addr)
+	return meta
+}
+
+// OriginalQuery returns the copied original query msg a that created the Context.
+// It always returns a non-nil msg.
+// The returned msg SHOULD NOT be modified.
+func (m *RequestMeta) SetClientAddr(addr netip.Addr) {
+	if addr.Is4In6() {
+		addr = addr.Unmap()
+	}
+	m.clientAddr = addr
+}
+
+func (m *RequestMeta) GetClientAddr() netip.Addr {
+	return m.clientAddr
 }
 
 // Context is a query context that pass through plugins
@@ -98,8 +115,8 @@ func (ctx *Context) String() string {
 	} else {
 		question = "empty question"
 	}
-	if ctx.reqMeta.ClientAddr.IsValid() {
-		clientAddr = ctx.reqMeta.ClientAddr.String()
+	if ctx.reqMeta.clientAddr.IsValid() {
+		clientAddr = ctx.reqMeta.clientAddr.String()
 	} else {
 		clientAddr = "unknown client"
 	}

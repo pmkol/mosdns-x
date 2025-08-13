@@ -37,7 +37,7 @@ import (
 
 	"github.com/pmkol/mosdns-x/pkg/dnsutils"
 	"github.com/pmkol/mosdns-x/pkg/pool"
-	"github.com/pmkol/mosdns-x/pkg/query_context"
+	C "github.com/pmkol/mosdns-x/pkg/query_context"
 	"github.com/pmkol/mosdns-x/pkg/server/dns_handler"
 )
 
@@ -109,9 +109,9 @@ type Request interface {
 
 func (h *Handler) ServeHTTP(w ResponseWriter, req Request) {
 	// get remote addr from header and request
-	var meta query_context.RequestMeta
+	meta := new(C.RequestMeta)
 	if addr, err := getRemoteAddr(req, h.opts.SrcIPHeader); err == nil {
-		meta.ClientAddr = addr
+		meta.SetClientAddr(addr)
 	}
 
 	// check url path
@@ -199,7 +199,7 @@ func (h *Handler) ServeHTTP(w ResponseWriter, req Request) {
 		h.opts.Logger.Debug(fmt.Sprintf("irregular message id: %d", m.Id))
 	}
 
-	r, err := h.opts.DNSHandler.ServeDNS(req.Context(), m, &meta)
+	r, err := h.opts.DNSHandler.ServeDNS(req.Context(), m, meta)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("handle response failed"))

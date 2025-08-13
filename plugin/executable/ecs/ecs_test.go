@@ -30,7 +30,7 @@ import (
 	"github.com/pmkol/mosdns-x/coremain"
 	"github.com/pmkol/mosdns-x/pkg/dnsutils"
 	"github.com/pmkol/mosdns-x/pkg/executable_seq"
-	"github.com/pmkol/mosdns-x/pkg/query_context"
+	C "github.com/pmkol/mosdns-x/pkg/query_context"
 )
 
 func Test_ecsPlugin(t *testing.T) {
@@ -94,7 +94,8 @@ func Test_ecsPlugin(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			qCtx := query_context.NewContext(q, &query_context.RequestMeta{ClientAddr: ip})
+			meta := C.NewRequestMeta(ip)
+			qCtx := C.NewContext(q, meta)
 
 			next := executable_seq.WrapExecutable(&executable_seq.DummyExecutable{
 				WantR: r,

@@ -87,7 +87,7 @@ func (l *logger) Exec(ctx context.Context, qCtx *query_context.Context, next exe
 		zap.String("qname", question.Name),
 		zap.Uint16("qtype", question.Qtype),
 		zap.Uint16("qclass", question.Qclass),
-		zap.Stringer("client", qCtx.ReqMeta().ClientAddr),
+		zap.Stringer("client", qCtx.ReqMeta().GetClientAddr()),
 		zap.Int("resp_rcode", respRcode),
 		zap.Duration("elapsed", time.Now().Sub(qCtx.StartTime())),
 		zap.Error(err),
