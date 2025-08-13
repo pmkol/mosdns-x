@@ -80,7 +80,7 @@ type ServerListenerConfig struct {
 	KernelTX            bool   `yaml:"kernel_tx"`               // use kernel tls to send data
 	KernelRX            bool   `yaml:"kernel_rx"`               // use kernel tls to receive data
 	URLPath             string `yaml:"url_path"`                // used by doh, http. If it's empty, any path will be handled.
-	GetUserIPFromHeader string `yaml:"get_user_ip_from_header"` // used by doh, http.
+	GetUserIPFromHeader string `yaml:"get_user_ip_from_header"` // used by doh, http, except "True-Client-IP" "X-Real-IP" "X-Forwarded-For".
 	ProxyProtocol       bool   `yaml:"proxy_protocol"`          // accepting the PROXYProtocol
 
 	IdleTimeout uint `yaml:"idle_timeout"` // (sec) used by tcp, dot, doh as connection idle timeout.
