@@ -64,7 +64,9 @@ type Opt struct {
 
 	// Socks5 specifies the socks5 proxy server that the upstream
 	// will connect though.
-	Socks5 string
+	Socks5     string
+	S5Username string
+	S5Password string
 
 	// SoMark sets the socket SO_MARK option in unix system.
 	SoMark int
@@ -135,7 +137,9 @@ func NewUpstream(addr string, opt *Opt) (Upstream, error) {
 				bind_to_device: opt.BindToDevice,
 			}),
 		},
-		SocksAddr: opt.Socks5,
+		SocksAddr:  opt.Socks5,
+		S5Username: opt.S5Username,
+		S5Password: opt.S5Password,
 	})
 	if err != nil {
 		return nil, err

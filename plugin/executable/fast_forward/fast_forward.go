@@ -64,6 +64,8 @@ type UpstreamConfig struct {
 	DialAddr       string `yaml:"dial_addr"`
 	Trusted        bool   `yaml:"trusted"`
 	Socks5         string `yaml:"socks5"`
+	S5Username     string `yaml:"s5_username"`
+	S5Password     string `yaml:"s5_password"`
 	SoMark         int    `yaml:"so_mark"`
 	BindToDevice   string `yaml:"bind_to_device"`
 	IdleTimeout    int    `yaml:"idle_timeout"`
@@ -116,6 +118,8 @@ func newFastForward(bp *coremain.BP, args *Args) (*fastForward, error) {
 		opt := &upstream.Opt{
 			DialAddr:       c.DialAddr,
 			Socks5:         c.Socks5,
+			S5Username:     c.S5Username,
+			S5Password:     c.S5Password,
 			SoMark:         c.SoMark,
 			BindToDevice:   c.BindToDevice,
 			IdleTimeout:    time.Duration(c.IdleTimeout) * time.Second,

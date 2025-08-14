@@ -28,7 +28,10 @@ import (
 	"strings"
 )
 
-const Version5 = 5
+const (
+	Version1 = 1
+	Version5 = 5
+)
 
 const (
 	MethodNoAuth = iota
@@ -36,6 +39,8 @@ const (
 	MethodUserPass
 	NoAcceptableMethods = 0xff
 )
+
+const AuthSucceeded = 0
 
 const DialSucceeded = 0
 
@@ -175,6 +180,20 @@ func (f UDPFqdnAddr) String() string {
 // o  X'03' to X'7F' IANA ASSIGNED
 // o  X'80' to X'FE' RESERVED FOR PRIVATE METHODS
 // o  X'FF' NO ACCEPTABLE METHODS
+
+// username password authentication request
+// +----+------+----------+------+----------+
+// |VER | ULEN |  UNAME   | PLEN |  PASSWD  |
+// +----+------+----------+------+----------+
+// | 1  |  1   | 1 to 255 |  1   | 1 to 255 |
+// +----+------+----------+------+----------+
+
+// username password authentication response
+// +----+--------+
+// |VER | STATUS |
+// +----+--------+
+// | 1  |   1    |
+// +----+--------+
 
 // dial request
 // +----+-----+-------+------+----------+----------+
