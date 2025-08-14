@@ -29,14 +29,16 @@ type Dialer interface {
 }
 
 type DialerOpts struct {
-	Dialer    *net.Dialer
-	SocksAddr string
+	Dialer     *net.Dialer
+	SocksAddr  string
+	S5Username string
+	S5Password string
 }
 
 func NewDialer(opts DialerOpts) (Dialer, error) {
 	if len(opts.SocksAddr) == 0 {
 		return newPlainDialer(opts.Dialer), nil
 	} else {
-		return newSocksDialer(opts.Dialer, opts.SocksAddr)
+		return newSocksDialer(opts.Dialer, opts.SocksAddr, opts.S5Username, opts.S5Password)
 	}
 }

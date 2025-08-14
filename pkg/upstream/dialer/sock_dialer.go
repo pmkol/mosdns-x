@@ -29,16 +29,18 @@ import (
 )
 
 type SocksDialer struct {
-	dialer *net.Dialer
-	addr   *SocksAddr
+	dialer   *net.Dialer
+	addr     *SocksAddr
+	username string
+	password string
 }
 
-func newSocksDialer(dialer *net.Dialer, addr string) (*SocksDialer, error) {
+func newSocksDialer(dialer *net.Dialer, addr string, username string, password string) (*SocksDialer, error) {
 	sAddr, err := ParseSocksAddr(addr)
 	if err != nil {
 		return nil, err
 	}
-	return &SocksDialer{dialer: dialer, addr: sAddr}, nil
+	return &SocksDialer{dialer: dialer, addr: sAddr, username: username, password: password}, nil
 }
 
 func (d *SocksDialer) DialContext(ctx context.Context, network, addr string) (net.Conn, error) {
@@ -50,6 +52,9 @@ func (d *SocksDialer) DialContext(ctx context.Context, network, addr string) (ne
 		return nil, fmt.Errorf("dial faile: %v", err)
 	}
 	methods := []byte{MethodNoAuth}
+	if d.username != "" || d.password != "" {
+		methods = append(methods, MethodUserPass)
+	}
 	negoReq := slices.Concat([]byte{Version5, byte(len(methods))}, methods)
 	_, err = conn.Write(negoReq)
 	if err != nil {
@@ -74,7 +79,39 @@ func (d *SocksDialer) DialContext(ctx context.Context, network, addr string) (ne
 		conn.Close()
 		return nil, fmt.Errorf("negotiation failed: no acceptable methods")
 	}
-	if negoRes[1] != MethodNoAuth {
+	if d.username == "" && d.password == "" {
+		if negoRes[1] != MethodNoAuth {
+			conn.Close()
+			return nil, fmt.Errorf("invalid negotiation method: %v", handleNegotiationMethod(negoRes[1]))
+		}
+	} else if negoRes[1] == MethodUserPass {
+		user := []byte(d.username)
+		pass := []byte(d.password)
+		authReq := slices.Concat([]byte{Version1, byte(len(user))}, user, []byte{byte(len(pass))}, pass)
+		_, err = conn.Write(authReq)
+		if err != nil {
+			conn.Close()
+			return nil, fmt.Errorf("send username password authentication request failed: %v", err)
+		}
+		authRes := make([]byte, 2)
+		n, err = conn.Read(authRes)
+		if err != nil {
+			conn.Close()
+			return nil, fmt.Errorf("receive username password authentication response failed: %v", err)
+		}
+		if n < 2 {
+			conn.Close()
+			return nil, fmt.Errorf("username password authentication response too short")
+		}
+		if authRes[0] != Version1 {
+			conn.Close()
+			return nil, fmt.Errorf("unsupported username password authentication response version: %v", authRes[0])
+		}
+		if authRes[1] != AuthSucceeded {
+			conn.Close()
+			return nil, fmt.Errorf("username password authentication faild: status %v", authRes[1])
+		}
+	} else if negoRes[1] != MethodNoAuth {
 		conn.Close()
 		return nil, fmt.Errorf("invalid negotiation method: %v", handleNegotiationMethod(negoRes[1]))
 	}
