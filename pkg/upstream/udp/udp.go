@@ -30,11 +30,11 @@ import (
 )
 
 type Upstream struct {
-	dialFunc     func(ctx context.Context) (*net.UDPConn, error)
+	dialFunc     func(ctx context.Context) (net.Conn, error)
 	tcpTransport *transport.Transport
 }
 
-func NewUDPUpstream(addr string, dialFunc func(ctx context.Context) (*net.UDPConn, error), tcpTransport *transport.Transport) (*Upstream, error) {
+func NewUDPUpstream(dialFunc func(ctx context.Context) (net.Conn, error), tcpTransport *transport.Transport) (*Upstream, error) {
 	return &Upstream{dialFunc, tcpTransport}, nil
 }
 

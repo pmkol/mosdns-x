@@ -17,9 +17,26 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-package upstream
+package dialer
 
-type socketOpts struct {
-	so_mark        int
-	bind_to_device string
+import (
+	"context"
+	"net"
+)
+
+type Dialer interface {
+	DialContext(ctx context.Context, network string, addr string) (net.Conn, error)
+}
+
+type DialerOpts struct {
+	Dialer    *net.Dialer
+	SocksAddr string
+}
+
+func NewDialer(opts DialerOpts) (Dialer, error) {
+	if len(opts.SocksAddr) == 0 {
+		return newPlainDialer(opts.Dialer), nil
+	} else {
+		return newSocksDialer(opts.Dialer, opts.SocksAddr)
+	}
 }
