@@ -26,7 +26,6 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"net/netip"
 	"net/url"
 	"strconv"
 	"strings"
@@ -41,6 +40,7 @@ import (
 
 	"github.com/pmkol/mosdns-x/pkg/dnsutils"
 	"github.com/pmkol/mosdns-x/pkg/upstream/bootstrap"
+	D "github.com/pmkol/mosdns-x/pkg/upstream/dialer"
 	"github.com/pmkol/mosdns-x/pkg/upstream/doh"
 	"github.com/pmkol/mosdns-x/pkg/upstream/doh3"
 	mQUIC "github.com/pmkol/mosdns-x/pkg/upstream/quic"
@@ -64,7 +64,6 @@ type Opt struct {
 
 	// Socks5 specifies the socks5 proxy server that the upstream
 	// will connect though.
-	// Not implemented for udp upstreams and doh upstreams with http/3.
 	Socks5 string
 
 	// SoMark sets the socket SO_MARK option in unix system.
@@ -128,17 +127,19 @@ func NewUpstream(addr string, opt *Opt) (Upstream, error) {
 		return nil, fmt.Errorf("invalid server address, %w", err)
 	}
 
-	dialer := &net.Dialer{
-		Resolver: bootstrap.NewPlainBootstrap(opt.Bootstrap),
-		Control: getSocketControlFunc(socketOpts{
-			so_mark:        opt.SoMark,
-			bind_to_device: opt.BindToDevice,
-		}),
+	d, err := D.NewDialer(D.DialerOpts{
+		Dialer: &net.Dialer{
+			Resolver: bootstrap.NewPlainBootstrap(opt.Bootstrap),
+			Control: getSocketControlFunc(socketOpts{
+				so_mark:        opt.SoMark,
+				bind_to_device: opt.BindToDevice,
+			}),
+		},
+		SocksAddr: opt.Socks5,
+	})
+	if err != nil {
+		return nil, err
 	}
-	lc := &net.ListenConfig{Control: getSocketControlFunc(socketOpts{
-		so_mark:        opt.SoMark,
-		bind_to_device: opt.BindToDevice,
-	})}
 
 	switch addrURL.Scheme {
 	case "", "udp":
@@ -146,7 +147,7 @@ func NewUpstream(addr string, opt *Opt) (Upstream, error) {
 		tto := transport.Opts{
 			Logger: opt.Logger,
 			DialFunc: func(ctx context.Context) (net.Conn, error) {
-				return dialer.DialContext(ctx, "tcp", dialAddr)
+				return d.DialContext(ctx, "tcp", dialAddr)
 			},
 			WriteFunc: dnsutils.WriteMsgToTCP,
 			ReadFunc:  dnsutils.ReadMsgFromTCP,
@@ -155,23 +156,15 @@ func NewUpstream(addr string, opt *Opt) (Upstream, error) {
 		if err != nil {
 			return nil, fmt.Errorf("cannot init tcp transport, %w", err)
 		}
-		return udp.NewUDPUpstream(dialAddr, func(ctx context.Context) (*net.UDPConn, error) {
-			conn, err := dialer.DialContext(ctx, "udp", dialAddr)
-			if err != nil {
-				return nil, err
-			}
-			udpConn, isUDPConn := conn.(*net.UDPConn)
-			if !isUDPConn {
-				return nil, fmt.Errorf("this in not a udp conn")
-			}
-			return udpConn, nil
+		return udp.NewUDPUpstream(func(ctx context.Context) (net.Conn, error) {
+			return d.DialContext(ctx, "udp", dialAddr)
 		}, tt)
 	case "tcp":
 		dialAddr := getDialAddrWithPort(addrURL.Host, opt.DialAddr, 53)
 		to := transport.Opts{
 			Logger: opt.Logger,
 			DialFunc: func(ctx context.Context) (net.Conn, error) {
-				return dialTCP(ctx, dialAddr, opt.Socks5, dialer)
+				return d.DialContext(ctx, "tcp", dialAddr)
 			},
 			WriteFunc:      dnsutils.WriteMsgToTCP,
 			ReadFunc:       dnsutils.ReadMsgFromTCP,
@@ -186,7 +179,7 @@ func NewUpstream(addr string, opt *Opt) (Upstream, error) {
 		to := transport.Opts{
 			Logger: opt.Logger,
 			DialFunc: func(ctx context.Context) (net.Conn, error) {
-				conn, err := dialTCP(ctx, dialAddr, opt.Socks5, dialer)
+				conn, err := d.DialContext(ctx, "tcp", dialAddr)
 				if err != nil {
 					return nil, err
 				}
@@ -220,9 +213,19 @@ func NewUpstream(addr string, opt *Opt) (Upstream, error) {
 			KeepAlivePeriod:                idleConnTimeout / 2,
 		}
 		return mQUIC.NewQUICUpstream(dialAddr, func(ctx context.Context) (*mQUIC.Conn, error) {
-			conn, err := dialQuicEarlyConn(ctx, dialAddr, dialer, lc, tlsConfig, quicConfig)
+			c, err := d.DialContext(ctx, "udp", dialAddr)
 			if err != nil {
 				return nil, err
+			}
+			pc, isPC := c.(net.PacketConn)
+			if !isPC {
+				c.Close()
+				return nil, fmt.Errorf("not a net.PacketConn")
+			}
+			conn, err := quic.DialEarly(ctx, pc, c.RemoteAddr(), tlsConfig, quicConfig)
+			if err != nil {
+				c.Close()
+				return nil, fmt.Errorf("dial quic early conn failed: %v", err)
 			}
 			return mQUIC.NewConn(conn), nil
 		}), nil
@@ -233,8 +236,8 @@ func NewUpstream(addr string, opt *Opt) (Upstream, error) {
 		}
 		dialAddr := getDialAddrWithPort(addrURL.Host, opt.DialAddr, 80)
 		return doh.NewUpstream(addrURL, &http.Transport{
-			DialContext: func(ctx context.Context, network, _ string) (net.Conn, error) {
-				return dialer.DialContext(ctx, network, dialAddr)
+			DialContext: func(ctx context.Context, _, _ string) (net.Conn, error) {
+				return d.DialContext(ctx, "tcp", dialAddr)
 			},
 			IdleConnTimeout: idleConnTimeout,
 		}), nil
@@ -248,7 +251,7 @@ func NewUpstream(addr string, opt *Opt) (Upstream, error) {
 		tlsConfig := createETLSConfig(opt, "h2", addrURL.Hostname())
 		return doh.NewUpstream(addrURL, &http.Transport{
 			DialTLSContext: func(ctx context.Context, network, _ string) (net.Conn, error) {
-				conn, err := dialer.DialContext(ctx, network, dialAddr)
+				conn, err := d.DialContext(ctx, "tcp", dialAddr)
 				if err != nil {
 					return nil, err
 				}
@@ -269,9 +272,8 @@ func NewUpstream(addr string, opt *Opt) (Upstream, error) {
 		}
 		addrURL.Scheme = "https"
 		dialAddr := getDialAddrWithPort(addrURL.Host, opt.DialAddr, 443)
-		tlsConfig := createTLSConfig(opt, "h3", addrURL.Hostname())
 		return doh3.NewUpstream(addrURL, &http3.Transport{
-			TLSClientConfig: tlsConfig,
+			TLSClientConfig: createTLSConfig(opt, "h3", addrURL.Hostname()),
 			QUICConfig: &quic.Config{
 				TokenStore:                     quic.NewLRUTokenStore(1, 10),
 				InitialStreamReceiveWindow:     4 * 1024,
@@ -281,7 +283,16 @@ func NewUpstream(addr string, opt *Opt) (Upstream, error) {
 				KeepAlivePeriod:                idleConnTimeout / 2,
 			},
 			Dial: func(ctx context.Context, _ string, tlsCfg *tls.Config, cfg *quic.Config) (*quic.Conn, error) {
-				return dialQuicEarlyConn(ctx, dialAddr, dialer, lc, tlsCfg, cfg)
+				c, err := d.DialContext(ctx, "udp", dialAddr)
+				if err != nil {
+					return nil, err
+				}
+				pc, isPC := c.(net.PacketConn)
+				if !isPC {
+					c.Close()
+					return nil, fmt.Errorf("not a net.PacketConn")
+				}
+				return quic.DialEarly(ctx, pc, c.RemoteAddr(), tlsCfg, cfg)
 			},
 		}), nil
 	default:
@@ -331,29 +342,6 @@ func tryRemovePort(s string) string {
 		return s
 	}
 	return host
-}
-
-func dialQuicEarlyConn(ctx context.Context, dialAddr string, dialer *net.Dialer, lc *net.ListenConfig, tlsCfg *tls.Config, cfg *quic.Config) (*quic.Conn, error) {
-	var addr net.Addr
-	if addrPort, err := netip.ParseAddrPort(dialAddr); err == nil {
-		addr = net.UDPAddrFromAddrPort(addrPort)
-	} else {
-		c, err := dialer.DialContext(ctx, "udp", dialAddr)
-		if err != nil {
-			return nil, err
-		}
-		c.Close()
-		uc, isUC := c.(*net.UDPConn)
-		if !isUC {
-			return nil, fmt.Errorf("this is not an udp conn")
-		}
-		addr = uc.RemoteAddr()
-	}
-	pc, err := lc.ListenPacket(ctx, "udp", "")
-	if err != nil {
-		return nil, err
-	}
-	return quic.DialEarly(ctx, pc, addr, tlsCfg, cfg)
 }
 
 type udpWithFallback struct {
