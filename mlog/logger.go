@@ -25,6 +25,7 @@ import (
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 type LogConfig struct {
@@ -40,6 +41,19 @@ type LogConfig struct {
 
 	// OmitTime omits the time in log.
 	OmitTime bool `yaml:"omit_time"`
+
+	// MaxSize is the maximum size in megabytes of the log file before it gets rotated.
+	// Default: 10 MB
+	MaxSize int `yaml:"max_size"`
+
+	// MaxBackups is the maximum number of old log files to retain.
+	// Default: 3
+	MaxBackups int `yaml:"max_backups"`
+
+	// MaxAge is the maximum number of days to retain old log files based on the
+	// timestamp encoded in their filename.
+	// Default: 14 days
+	MaxAge int `yaml:"max_age"`
 
 	// parsed level
 	lvl zapcore.Level
@@ -60,17 +74,31 @@ func NewLogger(lc *LogConfig) (*zap.Logger, error) {
 	}
 	lc.lvl = lvl
 
+	// Set default values for log rotation
+	if lc.MaxSize <= 0 {
+		lc.MaxSize = 10 // 10 MB
+	}
+	if lc.MaxBackups <= 0 {
+		lc.MaxBackups = 3 // Keep 3 old files
+	}
+	if lc.MaxAge <= 0 {
+		lc.MaxAge = 14 // Keep for 14 days
+	}
+
 	return newLoggerFromCfg(lc)
 }
 
 func newLoggerFromCfg(lc *LogConfig) (*zap.Logger, error) {
 	var out zapcore.WriteSyncer
 	if lf := lc.File; len(lf) > 0 {
-		f, _, err := zap.Open(lf)
-		if err != nil {
-			return nil, fmt.Errorf("open log file: %w", err)
+		// Use lumberjack for log rotation if a file is specified
+		lumberjackLogger := &lumberjack.Logger{
+			Filename:   lf,
+			MaxSize:    lc.MaxSize,
+			MaxBackups: lc.MaxBackups,
+			MaxAge:     lc.MaxAge,
 		}
-		out = zapcore.Lock(f)
+		out = zapcore.AddSync(lumberjackLogger)
 	} else {
 		out = stderr
 	}
