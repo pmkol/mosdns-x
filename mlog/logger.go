@@ -43,7 +43,7 @@ type LogConfig struct {
 	OmitTime bool `yaml:"omit_time"`
 
 	// EnableLogRotation enables log rotation.
-	// Default is false (disabled).
+	// Default is true (enabled).
 	EnableLogRotation bool `yaml:"enable_log_rotation"`
 
 	// MaxSize is the maximum size in megabytes of the log file before it gets rotated.
@@ -77,6 +77,11 @@ func NewLogger(lc *LogConfig) (*zap.Logger, error) {
 		return nil, fmt.Errorf("invalid log level: %w", err)
 	}
 	lc.lvl = lvl
+
+	// Set EnableLogRotation to true by default
+	if !lc.EnableLogRotation {
+		lc.EnableLogRotation = true
+	}
 
 	// Set default values for log rotation
 	if lc.MaxSize <= 0 {
