@@ -231,12 +231,12 @@ func NewUpstream(addr string, opt *Opt) (Upstream, error) {
 
 		dialAddr := getDialAddrWithPort(addrURL.Host, opt.DialAddr, 853)
 		quicConfig := &quic.Config{
-			TokenStore:                     quic.NewLRUTokenStore(1, 10),
+			TokenStore:                     quic.NewLRUTokenStore(2, 10),
 			InitialStreamReceiveWindow:     4 * 1024,
 			MaxStreamReceiveWindow:         4 * 1024,
 			InitialConnectionReceiveWindow: 8 * 1024,
 			MaxConnectionReceiveWindow:     64 * 1024,
-			KeepAlivePeriod:                idleConnTimeout / 2,
+			KeepAlivePeriod:                idleConnTimeout * 2 / 3,
 		}
 		return mQUIC.NewQUICUpstream(dialAddr, func(ctx context.Context) (*mQUIC.Conn, error) {
 			c, err := dialer.DialContext(ctx, "udp", dialAddr)
