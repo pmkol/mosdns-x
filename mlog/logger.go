@@ -42,6 +42,10 @@ type LogConfig struct {
 	// OmitTime omits the time in log.
 	OmitTime bool `yaml:"omit_time"`
 
+	// EnableLogRotation enables log rotation.
+	// Default is false (disabled).
+	EnableLogRotation bool `yaml:"enable_log_rotation"`
+
 	// MaxSize is the maximum size in megabytes of the log file before it gets rotated.
 	// Default: 10 MB
 	MaxSize int `yaml:"max_size"`
@@ -91,14 +95,22 @@ func NewLogger(lc *LogConfig) (*zap.Logger, error) {
 func newLoggerFromCfg(lc *LogConfig) (*zap.Logger, error) {
 	var out zapcore.WriteSyncer
 	if lf := lc.File; len(lf) > 0 {
-		// Use lumberjack for log rotation if a file is specified
-		lumberjackLogger := &lumberjack.Logger{
-			Filename:   lf,
-			MaxSize:    lc.MaxSize,
-			MaxBackups: lc.MaxBackups,
-			MaxAge:     lc.MaxAge,
+		// Use lumberjack for log rotation if a file is specified and rotation is enabled
+		if lc.EnableLogRotation {
+			lumberjackLogger := &lumberjack.Logger{
+				Filename:   lf,
+				MaxSize:    lc.MaxSize,
+				MaxBackups: lc.MaxBackups,
+				MaxAge:     lc.MaxAge,
+			}
+			out = zapcore.AddSync(lumberjackLogger)
+		} else {
+			f, _, err := zap.Open(lf)
+			if err != nil {
+				return nil, fmt.Errorf("open log file: %w", err)
+			}
+			out = zapcore.Lock(f)
 		}
-		out = zapcore.AddSync(lumberjackLogger)
 	} else {
 		out = stderr
 	}
