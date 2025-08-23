@@ -1,8 +1,8 @@
 module github.com/pmkol/mosdns-x
 
-go 1.24
+go 1.25
 
-toolchain go1.24.5
+toolchain go1.25.0
 
 require (
 	github.com/Knetic/govaluate v3.0.0+incompatible
