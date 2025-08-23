@@ -31,7 +31,7 @@ import (
 	_ "github.com/pmkol/mosdns-x/tools"
 )
 
-var version = "dev/unknown"
+var version = "v4.6.0/x-server"
 
 func init() {
 	coremain.AddSubCmd(&cobra.Command{
