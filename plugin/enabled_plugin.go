@@ -36,6 +36,7 @@ import (
 	_ "github.com/pmkol/mosdns-x/plugin/executable/metrics_collector"
 	_ "github.com/pmkol/mosdns-x/plugin/executable/misc_optm"
 	_ "github.com/pmkol/mosdns-x/plugin/executable/nftset"
+	_ "github.com/pmkol/mosdns-x/plugin/executable/no_cname"
 	_ "github.com/pmkol/mosdns-x/plugin/executable/padding"
 	_ "github.com/pmkol/mosdns-x/plugin/executable/query_summary"
 	_ "github.com/pmkol/mosdns-x/plugin/executable/redirect"
