@@ -1,7 +1,20 @@
-# mosdns
+# Mosdns-x
 
-功能概述、配置方式、教程等，详见: [wiki](https://irine-sistiana.gitbook.io/mosdns-wiki/)
+Mosdns-x is a high-performance DNS forwarder written in Go. It supports running a plugin pipeline, allowing users to customize DNS processing logic as needed.
 
-下载预编译文件、更新日志，详见: [release](https://github.com/IrineSistiana/mosdns/releases)
+It supports listening for and handling DNS queries over:
+- UDP
+- TCP
+- DNS over TLS (DoT)
+- DNS over QUIC (DoQ)
+- DNS over HTTP/2 (DoH)
+- DNS over HTTP/3 (DoH3)
 
-docker 镜像: [docker hub](https://hub.docker.com/r/irinesistiana/mosdns)
+For a feature overview, configuration guide, and tutorials, please refer to the wiki.
+
+This branch is used for production servers and differs slightly from the description in the wiki.
+
+Build the project on Linux using the instructions below. Ensure Go 1.25 or later is installed.
+```
+GOOS=linux GOARCH=amd64 GOAMD64=v3 CGO_ENABLED=0 GOEXPERIMENT=greenteagc go build -ldflags "-s -w -buildid=" -trimpath -o mosdns
+```
