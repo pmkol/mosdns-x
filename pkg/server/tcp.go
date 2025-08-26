@@ -26,6 +26,7 @@ import (
 	"sync"
 	"time"
 
+	"gitlab.com/go-extension/tls"
 	"go.uber.org/zap"
 
 	"github.com/pmkol/mosdns-x/pkg/dnsutils"
@@ -86,6 +87,21 @@ func (s *Server) ServeTCP(l net.Listener) error {
 
 			clientAddr := utils.GetAddrFromAddr(c.RemoteAddr())
 			meta := C.NewRequestMeta(clientAddr)
+
+			if tlsConn, isTLSConn := c.(*tls.Conn); isTLSConn {
+				err := tlsConn.HandshakeContext(tcpConnCtx)
+				if err != nil {
+					s.opts.Logger.Warn("handshake failed", zap.Stringer("from", clientAddr), zap.Error(err))
+					if tcpConn, isTCPConn := c.(*net.TCPConn); isTCPConn {
+						tcpConn.SetLinger(0)
+					}
+					return
+				}
+				meta.SetProtocol(C.ProtocolTLS)
+				meta.SetServerName(tlsConn.ConnectionState().ServerName)
+			} else {
+				meta.SetProtocol(C.ProtocolTCP)
+			}
 
 			firstRead := true
 

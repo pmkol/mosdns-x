@@ -89,6 +89,7 @@ func (s *Server) ServeUDP(c net.PacketConn) error {
 		// handle query
 		go func() {
 			meta := C.NewRequestMeta(clientAddr)
+			meta.SetProtocol(C.ProtocolUDP)
 
 			r, err := handler.ServeDNS(listenerCtx, q, meta)
 			if err != nil {

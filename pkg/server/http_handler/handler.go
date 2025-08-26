@@ -33,6 +33,7 @@ import (
 
 	"github.com/gobwas/glob"
 	"github.com/miekg/dns"
+	"github.com/quic-go/quic-go/http3"
 	"go.uber.org/zap"
 
 	"github.com/pmkol/mosdns-x/pkg/dnsutils"
@@ -98,6 +99,7 @@ type Header interface {
 
 type Request interface {
 	URL() *url.URL
+	TLS() *TlsInfo
 	Body() io.ReadCloser
 	Header() Header
 	Method() string
@@ -107,11 +109,31 @@ type Request interface {
 	SetRemoteAddr(addr string)
 }
 
+type TlsInfo struct {
+	Version            uint16
+	ServerName         string
+	NegotiatedProtocol string
+}
+
 func (h *Handler) ServeHTTP(w ResponseWriter, req Request) {
 	// get remote addr from header and request
 	meta := new(C.RequestMeta)
 	if addr, err := getRemoteAddr(req, h.opts.SrcIPHeader); err == nil {
 		meta.SetClientAddr(addr)
+	}
+
+	if tlsInfo := req.TLS(); tlsInfo != nil {
+		meta.SetServerName(tlsInfo.ServerName)
+		switch tlsInfo.NegotiatedProtocol {
+		case http3.NextProtoH3:
+			meta.SetProtocol(C.ProtocolH3)
+		case "h2":
+			meta.SetProtocol(C.ProtocolH2)
+		default:
+			meta.SetProtocol(C.ProtocolHTTPS)
+		}
+	} else {
+		meta.SetProtocol(C.ProtocolHTTP)
 	}
 
 	// check url path

@@ -81,6 +81,18 @@ func (r *eRequest) URL() *url.URL {
 	return r.r.URL
 }
 
+func (r *eRequest) TLS() *H.TlsInfo {
+	if r.r.TLS == nil {
+		return nil
+	} else {
+		return &H.TlsInfo{
+			Version:            r.r.TLS.Version,
+			ServerName:         r.r.TLS.ServerName,
+			NegotiatedProtocol: r.r.TLS.NegotiatedProtocol,
+		}
+	}
+}
+
 func (r *eRequest) Body() io.ReadCloser {
 	return r.r.Body
 }

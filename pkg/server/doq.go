@@ -99,6 +99,8 @@ func (s *Server) ServeQUIC(l *quic.EarlyListener) error {
 
 			clientAddr := utils.GetAddrFromAddr(c.RemoteAddr())
 			meta := C.NewRequestMeta(clientAddr)
+			meta.SetProtocol(C.ProtocolQUIC)
+			meta.SetServerName(c.ConnectionState().TLS.ServerName)
 			defer s.trackCloser(closer, false)
 
 			timeout := time.AfterFunc(firstReadTimeout, cancelConn)

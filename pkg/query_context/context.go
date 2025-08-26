@@ -33,11 +33,26 @@ import (
 	"github.com/pmkol/mosdns-x/pkg/dnsutils"
 )
 
+const (
+	ProtocolUDP   = "udp"
+	ProtocolTCP   = "tcp"
+	ProtocolTLS   = "tls"
+	ProtocolQUIC  = "quic"
+	ProtocolHTTP  = "http"
+	ProtocolHTTPS = "https"
+	ProtocolH2    = "h2"
+	ProtocolH3    = "h3"
+)
+
 // RequestMeta represents some metadata about the request.
 type RequestMeta struct {
 	// ClientAddr contains the client ip address.
 	// It might be zero/invalid.
 	clientAddr netip.Addr
+
+	serverName string
+
+	protocol string
 }
 
 func NewRequestMeta(addr netip.Addr) *RequestMeta {
@@ -56,8 +71,24 @@ func (m *RequestMeta) SetClientAddr(addr netip.Addr) {
 	m.clientAddr = addr
 }
 
+func (m *RequestMeta) SetProtocol(protocol string) {
+	m.protocol = protocol
+}
+
+func (m *RequestMeta) SetServerName(serverName string) {
+	m.serverName = serverName
+}
+
 func (m *RequestMeta) GetClientAddr() netip.Addr {
 	return m.clientAddr
+}
+
+func (m *RequestMeta) GetProtocol() string {
+	return m.protocol
+}
+
+func (m *RequestMeta) GetServerName() string {
+	return m.serverName
 }
 
 // Context is a query context that pass through plugins

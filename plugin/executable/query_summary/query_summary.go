@@ -27,7 +27,7 @@ import (
 
 	"github.com/pmkol/mosdns-x/coremain"
 	"github.com/pmkol/mosdns-x/pkg/executable_seq"
-	"github.com/pmkol/mosdns-x/pkg/query_context"
+	C "github.com/pmkol/mosdns-x/pkg/query_context"
 )
 
 const (
@@ -68,7 +68,7 @@ func newLogger(bp *coremain.BP, args *Args) coremain.Plugin {
 	return &logger{BP: bp, args: args}
 }
 
-func (l *logger) Exec(ctx context.Context, qCtx *query_context.Context, next executable_seq.ExecutableChainNode) error {
+func (l *logger) Exec(ctx context.Context, qCtx *C.Context, next executable_seq.ExecutableChainNode) error {
 	err := executable_seq.ExecChainNode(ctx, qCtx, next)
 
 	q := qCtx.Q()
@@ -81,16 +81,24 @@ func (l *logger) Exec(ctx context.Context, qCtx *query_context.Context, next exe
 		respRcode = r.Rcode
 	}
 
+	inboundInfo := []zap.Field{
+		zap.Uint32("uqid", qCtx.Id()),
+		zap.Stringer("client", qCtx.ReqMeta().GetClientAddr()),
+		zap.String("proto", qCtx.ReqMeta().GetProtocol()),
+	}
+	switch qCtx.ReqMeta().GetProtocol() {
+	case C.ProtocolHTTPS, C.ProtocolH2, C.ProtocolH3, C.ProtocolQUIC, C.ProtocolTLS:
+		inboundInfo = append(inboundInfo, zap.String("sname", qCtx.ReqMeta().GetServerName()))
+	}
 	l.BP.L().Info(
 		l.args.Msg,
-		zap.Uint32("uqid", qCtx.Id()),
-		zap.String("qname", question.Name),
-		zap.Uint16("qtype", question.Qtype),
-		zap.Uint16("qclass", question.Qclass),
-		zap.Stringer("client", qCtx.ReqMeta().GetClientAddr()),
-		zap.Int("resp_rcode", respRcode),
-		zap.Duration("elapsed", time.Now().Sub(qCtx.StartTime())),
-		zap.Error(err),
+		append(inboundInfo,
+			zap.String("qname", question.Name),
+			zap.Uint16("qtype", question.Qtype),
+			zap.Uint16("qclass", question.Qclass),
+			zap.Int("resp_rcode", respRcode),
+			zap.Duration("elapsed", time.Since(qCtx.StartTime())),
+			zap.Error(err))...,
 	)
 	return err
 }
