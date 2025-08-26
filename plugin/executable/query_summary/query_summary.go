@@ -22,6 +22,7 @@ package query_summary
 import (
 	"context"
 	"time"
+	"strings"
 
 	"go.uber.org/zap"
 
@@ -88,14 +89,17 @@ func (l *logger) Exec(ctx context.Context, qCtx *C.Context, next executable_seq.
 	}
 	switch qCtx.ReqMeta().GetProtocol() {
 	case C.ProtocolHTTPS, C.ProtocolH2, C.ProtocolH3, C.ProtocolQUIC, C.ProtocolTLS:
-		inboundInfo = append(inboundInfo, zap.String("sname", qCtx.ReqMeta().GetServerName()))
+		serverName := qCtx.ReqMeta().GetServerName()
+		if i := strings.IndexByte(serverName, '.'); i > 0 {
+			serverName = serverName[:i]
+		}
+		inboundInfo = append(inboundInfo, zap.String("sn", serverName))
 	}
 	l.BP.L().Info(
 		l.args.Msg,
 		append(inboundInfo,
 			zap.String("qname", question.Name),
 			zap.Uint16("qtype", question.Qtype),
-			zap.Uint16("qclass", question.Qclass),
 			zap.Int("resp_rcode", respRcode),
 			zap.Duration("elapsed", time.Since(qCtx.StartTime())),
 			zap.Error(err))...,
