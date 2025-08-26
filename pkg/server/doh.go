@@ -46,8 +46,8 @@ func (s *Server) ServeHTTP(l net.Listener) error {
 	hs := &http.Server{
 		Handler:           &eHandler{s.opts.HttpHandler},
 		ReadHeaderTimeout: time.Millisecond * 500,
-		ReadTimeout:       time.Second * 5,
-		WriteTimeout:      time.Second * 5,
+		ReadTimeout:       time.Second * 10,
+		WriteTimeout:      time.Second * 10,
 		IdleTimeout:       idleTimeout,
 		MaxHeaderBytes:    2048,
 	}
