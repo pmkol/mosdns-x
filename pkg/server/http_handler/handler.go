@@ -31,7 +31,6 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/gobwas/glob"
 	"github.com/miekg/dns"
 	"github.com/quic-go/quic-go/http3"
 	"go.uber.org/zap"
@@ -144,33 +143,33 @@ func (h *Handler) ServeHTTP(w ResponseWriter, req Request) {
 		return
 	}
 
-	// check accept header
-	if accept := req.Header().Get("Accept"); accept == "" {
-		w.WriteHeader(http.StatusPreconditionFailed)
-		w.Write([]byte("empty Accept header"))
-		h.warnErr(req, fmt.Errorf("empty Accept header"))
-		return
-	} else {
-		var matched bool
-		for pattern := range strings.SplitSeq(accept, ";") {
-			if glob.MustCompile(strings.TrimSpace(pattern)).Match("application/dns-message") {
-				matched = true
-				break
-			}
-		}
-		if !matched {
-			w.WriteHeader(http.StatusPreconditionFailed)
-			w.Write([]byte("invalid Accept header"))
-			h.warnErr(req, fmt.Errorf("invalid Accept header: %s", accept))
-			return
-		}
-	}
-
 	var b []byte
 	var err error
 
 	switch req.Method() {
 	case http.MethodGet:
+		accept := req.Header().Get("Accept")
+		if accept == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("missing Accept header"))
+			h.warnErr(req, fmt.Errorf("missing Accept header"))
+			return
+		}
+		var matched bool
+		for _, v := range strings.Split(accept, ",") {
+			mediatype := strings.TrimSpace(strings.SplitN(v, ";", 2)[0])
+			if mediatype == "application/dns-message" {
+				matched = true
+				break
+			}
+		}
+		if !matched {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("invalid Accept header"))
+			h.warnErr(req, fmt.Errorf("invalid Accept header: %s", accept))
+			return
+		}
+
 		s := req.URL().Query().Get("dns")
 		if len(s) == 0 {
 			w.WriteHeader(http.StatusBadRequest)
@@ -188,7 +187,7 @@ func (h *Handler) ServeHTTP(w ResponseWriter, req Request) {
 		}
 	case http.MethodPost:
 		if contentType := req.Header().Get("Content-Type"); contentType != "application/dns-message" {
-			w.WriteHeader(http.StatusUnsupportedMediaType)
+			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte("invalid Content-Type header"))
 			h.warnErr(req, fmt.Errorf("invalid Content-Type header: %s", contentType))
 			return
