@@ -45,8 +45,8 @@ func tryCreateWatchCert[T tls.Certificate | eTLS.Certificate](certFile string, k
 		if err != nil {
 			return
 		}
-		watcher.Add(certFile)
-		watcher.Add(keyFile)
+		_ = watcher.Add(certFile)
+		_ = watcher.Add(keyFile)
 		var timer *time.Timer
 		for {
 			select {
@@ -72,12 +72,9 @@ func tryCreateWatchCert[T tls.Certificate | eTLS.Certificate](certFile string, k
 					timer.Reset(time.Second)
 				}
 			case err := <-watcher.Errors:
-				if err != nil {
-					if timer != nil {
-						timer.Stop()
-						timer = nil
-					}
-					return
+				if err != nil && timer != nil {
+					timer.Stop()
+					timer = nil
 				}
 			}
 		}
