@@ -21,6 +21,7 @@ package query_summary
 
 import (
 	"context"
+	"net"
 	"time"
 	"strings"
 
@@ -90,8 +91,10 @@ func (l *logger) Exec(ctx context.Context, qCtx *C.Context, next executable_seq.
 	switch qCtx.ReqMeta().GetProtocol() {
 	case C.ProtocolHTTPS, C.ProtocolH2, C.ProtocolH3, C.ProtocolQUIC, C.ProtocolTLS:
 		serverName := qCtx.ReqMeta().GetServerName()
-		if i := strings.IndexByte(serverName, '.'); i > 0 {
+		if net.ParseIP(serverName) == nil {
+			if i := strings.IndexByte(serverName, '.'); i > 0 {
 			serverName = serverName[:i]
+			}
 		}
 		inboundInfo = append(inboundInfo, zap.String("sn", serverName))
 	}
