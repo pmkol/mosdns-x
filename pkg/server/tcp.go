@@ -29,11 +29,30 @@ import (
 	"gitlab.com/go-extension/tls"
 	"go.uber.org/zap"
 
+	"github.com/miekg/dns"
 	"github.com/pmkol/mosdns-x/pkg/dnsutils"
 	"github.com/pmkol/mosdns-x/pkg/pool"
 	C "github.com/pmkol/mosdns-x/pkg/query_context"
+	"github.com/pmkol/mosdns-x/pkg/server/dns_handler"
 	"github.com/pmkol/mosdns-x/pkg/utils"
 )
+
+type TCPConn struct {
+	sync.Mutex
+	net.Conn
+	handler dns_handler.Handler
+	meta    *C.RequestMeta
+}
+
+func (c *TCPConn) ServeDNS(ctx context.Context, req *dns.Msg) (*dns.Msg, error) {
+	return c.handler.ServeDNS(ctx, req, c.meta)
+}
+
+func (c *TCPConn) WriteRawMsg(b []byte) (int, error) {
+	c.Lock()
+	defer c.Unlock()
+	return dnsutils.WriteRawMsgToTCP(c, b)
+}
 
 const (
 	defaultTCPIdleTimeout = time.Second * 10
@@ -53,17 +72,8 @@ func (s *Server) ServeTCP(l net.Listener) error {
 	}
 	defer s.trackCloser(l, false)
 
-	firstReadTimeout := tcpFirstReadTimeout
-	idleTimeout := s.opts.IdleTimeout
-	if idleTimeout == 0 {
-		idleTimeout = defaultTCPIdleTimeout
-	}
-	if idleTimeout < firstReadTimeout {
-		firstReadTimeout = idleTimeout
-	}
-
 	// handle listener
-	listenerCtx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	for {
 		c, err := l.Accept()
@@ -71,78 +81,80 @@ func (s *Server) ServeTCP(l net.Listener) error {
 			if s.Closed() {
 				return ErrServerClosed
 			}
+			if err, ok := err.(net.Error); ok && err.Temporary() {
+				continue
+			}
 			return fmt.Errorf("unexpected listener err: %w", err)
 		}
 
-		// handle connection
-		tcpConnCtx, cancelConn := context.WithCancel(listenerCtx)
-		go func() {
-			defer c.Close()
-			defer cancelConn()
+		go s.handleConnectionTcp(ctx, &TCPConn{Conn: c, handler: handler})
+	}
+}
 
-			if !s.trackCloser(c, true) {
-				return
-			}
-			defer s.trackCloser(c, false)
+func (s *Server) handleConnectionTcp(ctx context.Context, c *TCPConn) {
+	defer c.Close()
 
-			clientAddr := utils.GetAddrFromAddr(c.RemoteAddr())
-			meta := C.NewRequestMeta(clientAddr)
+	if !s.trackCloser(c, true) {
+		return
+	}
+	defer s.trackCloser(c, false)
 
-			if tlsConn, isTLSConn := c.(*tls.Conn); isTLSConn {
-				err := tlsConn.HandshakeContext(tcpConnCtx)
-				if err != nil {
-					s.opts.Logger.Warn("handshake failed", zap.Stringer("from", clientAddr), zap.Error(err))
-					if tcpConn, isTCPConn := c.(*net.TCPConn); isTCPConn {
-						tcpConn.SetLinger(0)
-					}
-					return
-				}
-				meta.SetProtocol(C.ProtocolTLS)
-				meta.SetServerName(tlsConn.ConnectionState().ServerName)
-			} else {
-				meta.SetProtocol(C.ProtocolTCP)
-			}
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
-			firstRead := true
+	clientAddr := utils.GetAddrFromAddr(c.RemoteAddr())
+	meta := C.NewRequestMeta(clientAddr)
 
-			var access sync.Mutex
-			for {
-				if firstRead {
-					firstRead = false
-					c.SetReadDeadline(time.Now().Add(firstReadTimeout))
-				} else {
-					c.SetReadDeadline(time.Now().Add(idleTimeout))
-				}
-				req, _, err := dnsutils.ReadMsgFromTCP(c)
-				if err != nil {
-					return // read err, close the connection
-				}
+	protocol := C.ProtocolTCP
+	if tlsConn, ok := c.Conn.(*tls.Conn); ok {
+		if err := tlsConn.HandshakeContext(ctx); err != nil {
+			s.opts.Logger.Warn("handshake failed", zap.Stringer("from", c.RemoteAddr()), zap.Error(err))
+			return
+		}
 
-				// handle query
-				go func() {
-					r, err := handler.ServeDNS(tcpConnCtx, req, meta)
-					if err != nil {
-						s.opts.Logger.Warn("handler err", zap.Error(err))
-						c.Close()
-						return
-					}
+		meta.SetServerName(tlsConn.ConnectionState().ServerName)
+		protocol = C.ProtocolTLS
+	}
+	meta.SetProtocol(protocol)
+	c.meta = meta
 
-					b, buf, err := pool.PackBuffer(r)
-					if err != nil {
-						s.opts.Logger.Error("failed to unpack handler's response", zap.Error(err), zap.Stringer("msg", r))
-						return
-					}
-					defer buf.Release()
+	idleTimeout := s.opts.IdleTimeout
+	if idleTimeout <= 0 {
+		idleTimeout = defaultTCPIdleTimeout
+	}
 
-					access.Lock()
-					_, err = dnsutils.WriteRawMsgToTCP(c, b)
-					access.Unlock()
-					if err != nil {
-						s.opts.Logger.Warn("failed to write response", zap.Stringer("client", c.RemoteAddr()), zap.Error(err))
-						return
-					}
-				}()
-			}
-		}()
+	c.SetReadDeadline(time.Now().Add(min(idleTimeout, tcpFirstReadTimeout)))
+
+	for {
+		req, _, err := dnsutils.ReadMsgFromTCP(c)
+		if err != nil {
+			return // read err, close the connection
+		}
+
+		go s.handleQueryTcp(ctx, c, req)
+
+		c.SetReadDeadline(time.Now().Add(idleTimeout))
+	}
+}
+
+func (s *Server) handleQueryTcp(ctx context.Context, c *TCPConn, req *dns.Msg) {
+	r, err := c.ServeDNS(ctx, req)
+	if err != nil {
+		s.opts.Logger.Warn("handler err", zap.Error(err))
+		c.Close()
+		return
+	}
+
+	b, buf, err := pool.PackBuffer(r)
+	if err != nil {
+		s.opts.Logger.Error("failed to unpack handler's response", zap.Error(err), zap.Stringer("msg", r))
+		return
+	}
+	defer buf.Release()
+
+	_, err = c.WriteRawMsg(b)
+	if err != nil {
+		s.opts.Logger.Warn("failed to write response", zap.Stringer("client", c.RemoteAddr()), zap.Error(err))
+		return
 	}
 }
