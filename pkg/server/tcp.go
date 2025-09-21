@@ -107,7 +107,15 @@ func (s *Server) handleConnectionTcp(ctx context.Context, c *TCPConn) {
 
 	protocol := C.ProtocolTCP
 	if tlsConn, ok := c.Conn.(*tls.Conn); ok {
-		if err := tlsConn.HandshakeContext(ctx); err != nil {
+		handshakeTimeout := s.opts.IdleTimeout
+		if handshakeTimeout <= 0 {
+			handshakeTimeout = defaultTCPIdleTimeout
+		}
+
+		handshakeCtx, cancel := context.WithTimeout(ctx, handshakeTimeout)
+		defer cancel()
+
+		if err := tlsConn.HandshakeContext(handshakeCtx); err != nil {
 			s.opts.Logger.Warn("handshake failed", zap.Stringer("from", c.RemoteAddr()), zap.Error(err))
 			return
 		}
