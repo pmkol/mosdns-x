@@ -26,6 +26,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/miekg/dns"
 	"github.com/quic-go/quic-go/http3"
@@ -47,6 +48,8 @@ func NewUpstream(url *url.URL, transport *http3.Transport) *Upstream {
 }
 
 func (u *Upstream) ExchangeContext(ctx context.Context, q *dns.Msg) (*dns.Msg, error) {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
 	q.Id = 0
 	wire, buf, err := pool.PackBuffer(q)
 	if err != nil {
