@@ -74,10 +74,10 @@ func (u *Upstream) ExchangeContext(ctx context.Context, q *dns.Msg) (*dns.Msg, e
 	if contentType := res.Header.Get("Content-Type"); contentType != dnsContentType {
 		return nil, fmt.Errorf("unexpected content type: %s", contentType)
 	}
-	if contentLength := res.Header.Get("Content-Length"); contentLength == "" {
-		return nil, fmt.Errorf("empty response")
-	} else if length, _ := strconv.Atoi(contentLength); length == 0 {
-		return nil, fmt.Errorf("empty response")
+	if contentLength := res.Header.Get("Content-Length"); contentLength != "" {
+		if length, err := strconv.Atoi(contentLength); err == nil && length == 0 {
+			return nil, fmt.Errorf("empty response")
+		}
 	}
 	bb := bufPool.Get()
 	defer bufPool.Release(bb)
