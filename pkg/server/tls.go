@@ -45,6 +45,7 @@ func tryCreateWatchCert[T tls.Certificate | eTLS.Certificate](certFile string, k
 		if err != nil {
 			return
 		}
+		defer watcher.Close()
 		_ = watcher.Add(certFile)
 		_ = watcher.Add(keyFile)
 		var timer *time.Timer
