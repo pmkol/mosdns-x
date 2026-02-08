@@ -21,6 +21,7 @@ package server
 
 import (
 	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"net"
 	"time"
@@ -34,12 +35,38 @@ type cert[T tls.Certificate | eTLS.Certificate] struct {
 	c *T
 }
 
+func calculateTimeUntilMidnight() time.Duration {
+	now := time.Now()
+	nextMidnight := time.Date(now.Year(), now.Month(), now.Day()+1, 0, 0, 0, 0, now.Location())
+	return nextMidnight.Sub(now)
+}
+
 func tryCreateWatchCert[T tls.Certificate | eTLS.Certificate](certFile string, keyFile string, createFunc func(string, string) (T, error)) (*cert[T], error) {
 	c, err := createFunc(certFile, keyFile)
 	if err != nil {
 		return nil, err
 	}
 	cc := &cert[T]{&c}
+	checkAndReloadCert := func() {
+		var certBytes [][]byte
+		switch c := any(cc.c).(type) {
+		case *tls.Certificate:
+			certBytes = c.Certificate
+		case *eTLS.Certificate:
+			certBytes = c.Certificate
+		}
+		if len(certBytes) > 0 {
+			if x509Cert, err := x509.ParseCertificate(certBytes[0]); err == nil {
+				now := time.Now()
+				expiryThreshold := now.Add(72 * time.Hour)
+				if x509Cert.NotAfter.Before(expiryThreshold) {
+					if newCert, err := createFunc(certFile, keyFile); err == nil {
+						cc.c = &newCert
+					}
+				}
+			}
+		}
+	}
 	go func() {
 		watcher, err := fsnotify.NewWatcher()
 		if err != nil {
@@ -49,6 +76,8 @@ func tryCreateWatchCert[T tls.Certificate | eTLS.Certificate](certFile string, k
 		_ = watcher.Add(certFile)
 		_ = watcher.Add(keyFile)
 		var timer *time.Timer
+		dailyCheckTimer := time.NewTimer(calculateTimeUntilMidnight())
+		defer dailyCheckTimer.Stop()
 		for {
 			select {
 			case e, ok := <-watcher.Events:
@@ -77,6 +106,9 @@ func tryCreateWatchCert[T tls.Certificate | eTLS.Certificate](certFile string, k
 					timer.Stop()
 					timer = nil
 				}
+			case <-dailyCheckTimer.C:
+				checkAndReloadCert()
+				dailyCheckTimer.Reset(calculateTimeUntilMidnight())
 			}
 		}
 	}()
