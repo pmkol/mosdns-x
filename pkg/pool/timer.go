@@ -33,8 +33,11 @@ func GetTimer(t time.Duration) *time.Timer {
 	if !ok {
 		return time.NewTimer(t)
 	}
-	if timer.Reset(t) {
-		panic("dispatcher.go getTimer: active timer trapped in timerPool")
+	if !timer.Reset(t) {
+		select {
+		case <-timer.C:
+		default:
+		}
 	}
 	return timer
 }
