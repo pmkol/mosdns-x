@@ -21,6 +21,7 @@ package plugin
 
 // import all plugins
 import (
+	_ "github.com/pmkol/mosdns-x/plugin/executable/answer_shuffle"
 	_ "github.com/pmkol/mosdns-x/plugin/executable/arbitrary"
 	_ "github.com/pmkol/mosdns-x/plugin/executable/blackhole"
 	_ "github.com/pmkol/mosdns-x/plugin/executable/bufsize"
