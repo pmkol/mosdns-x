@@ -153,7 +153,7 @@ func (s *Server) CreateETLSListner(l net.Listener, nextProtos []string) (net.Lis
 		NextProtos:     nextProtos,
 		Defaults: eTLS.Defaults{
 			AllSecureCipherSuites: true,
-			AllSecureCurves: true,
+			AllSecureCurves:       true,
 		},
 		GetCertificate: func(_ *eTLS.ClientHelloInfo) (*eTLS.Certificate, error) {
 			return c.c, nil
